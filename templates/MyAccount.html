@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouTube-like Profile</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+  header {
+    background-color: #4d996a;
+    color: white;
+    padding: 10px;
+    text-align: center;
+  }
+  .profile-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #DDD;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  .profile-image {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background-color: #DDD;
+    margin: 0 auto 10px;
+  }
+  .profile-name {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+  .profile-description {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 20px;
+  }
+  .videos {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .video {
+    width: calc(33.33% - 20px);
+    margin: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  .video img {
+    width: 100%;
+    height: auto;
+  }
+  .video-title {
+    font-size: 16px;
+    font-weight: bold;
+    padding: 10px;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Лесной хостинг</h1>
+  </header>
+  <div class="profile-container">
+    <img class="profile-image" src="image/{{ account.PfpPath }}">
+    <div class="profile-name">{{ account.Name }}</div>
+
+    <div class="profile-description">{{ account.Description }}</div>
+    <form action="save_description.php" method="POST">
+      <label for="description">Описание:</label>
+      <textarea id="description" name="description" rows="4" cols="50"></textarea>
+      <br>
+      <input type="submit" value="Сохранить">
+    </form>
+    <h2>Видео</h2>
+    <div class="videos">
+      <div class="video">
+        <a href="video1.html"><img src="thumbnail1.jpg" alt="Видео 1"></a>
+        <div class="video-title">Название видео 1</div>
+      </div>
+      <div class="video">
+        <a href="video2.html"><img src="thumbnail2.jpg" alt="Видео 2"></a>
+        <div class="video-title">Название видео 2</div>
+      </div>
+      <!-- Добавьте другие видео здесь -->
+    </div>
+  </div>
+  <script>
+    function toggleEdit() {
+    var textarea = document.getElementById("myTextarea");
+    var editButton = document.getElementById("editButton");
+
+    if (textarea.readOnly) {
+        textarea.readOnly = false;
+        editButton.innerHTML = "Сохранить";
+    } else {
+        textarea.readOnly = true;
+        editButton.innerHTML = "Изменить";
+    }
+}
+  </script>
+</body>
+</html>
+

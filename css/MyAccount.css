@@ -1,0 +1,56 @@
+/* Устанавливаем фоновый цвет для всей страницы */
+body {
+    background-color: #f2f2f2;
+    font-family: Arial, sans-serif;
+}
+
+/* Стилизуем изображение */
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    border: 2px solid #333;
+    border-radius: 5px;
+}
+
+/* Стилизуем абзацы */
+p {
+    text-align: center;
+    font-size: 18px;
+    margin: 10px 0;
+}
+
+/* Стилизуем контейнеры с данными аккаунта */
+div {
+    background-color: #fff;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin: 10px;
+}
+
+/* Стилизуем заголовок страницы */
+h1 {
+    text-align: center;
+    font-size: 24px;
+    color: #333;
+}
+
+/* Стилизуем текстовые данные аккаунта */
+div.account-data {
+    font-weight: bold;
+    font-size: 20px;
+    color: #007bff; /* Голубой цвет */
+}
+
+/* Убираем стандартное подчеркивание у ссылок */
+a {
+    text-decoration: none;
+    color: #007bff; /* Голубой цвет для ссылок */
+}
+
+/* При наведении курсора на ссылку делаем ее подчеркнутой */
+a:hover {
+    text-decoration: underline;
+}

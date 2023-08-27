@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация</title>
+    <link rel="stylesheet" type="text/css" href="/css/reg.css">
+    <style>/* Общие стили для страницы */
+        body {
+            background-color: #4d996a; /* Темно-зеленый цвет, как лес */
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        
+        /* Стили для контейнера регистрации */
+        .register-container {
+            background-color: rgba(255, 255, 255, 0.9); /* Полупрозрачный белый фон */
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3); /* Тень */
+            text-align: center;
+        }
+        
+        /* Стили для заголовка */
+        h1 {
+            color: #4d996a; /* Темно-зеленый цвет текста, соответствующий цвету леса */
+        }
+        
+        /* Стили для формы */
+        .register-form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        /* Стили для полей ввода и меток */
+        label {
+            color: #4d996a;
+            font-weight: bold;
+            margin-bottom: 5px; /* Небольшой отступ между меткой и полем ввода */
+        }
+        
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        input[type="submit"] {
+            background-color: #4d996a;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            margin-top: 10px;
+            cursor: pointer;
+            transition: background-color 1s ease;
+        }
+
+        input[type="submit"]:disabled {
+            background-color: #ade9c4;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <h1>Регистрация</h1>
+        <form class="register-form" action="/reg" method="POST">
+            <input type="text" id="username" name="username" required placeholder="Введите логин">
+
+            <input type="password" id="passwordInput" name="password" required placeholder="Введите пароль">
+
+            <input type="password" id="passwordRepeat" name="passwordrepeat" required placeholder="Повторите пароль">
+
+            <input type="nickname" id="nickname" name="nickname" required placeholder="Введите никнейм">
+
+            <input type="submit" id = "checkPassword" value="ЛессГоу" onclick="validatePassword" disabled>
+        </form>
+    </div>
+
+    <script>const username = document.getElementById('username');
+        const passwordInput = document.getElementById('passwordInput');
+        const passwordRepeat = document.getElementById('passwordRepeat');
+        const nickname = document.getElementById('nickname');
+
+        let usernameFlag = false;
+        let passwordInputFlag = false;
+        let passwordRepeatFlag = false;
+        let nicknameFlag = false;
+
+        username.addEventListener('input', function() {
+            const usernameValue = username.value;
+            usernameFlag = usernameValue.length > 0;
+            updateValidationStyles();
+        });
+
+        passwordInput.addEventListener('input', function() {
+            const passwordInputValue = passwordInput.value;
+            const passwordPattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}$/;
+            passwordInputFlag = passwordPattern.test(passwordInputValue);
+            updateValidationStyles();
+        });
+
+        passwordRepeat.addEventListener('input', function() {
+            const passwordRepeatValue = passwordRepeat.value;
+            passwordRepeatFlag = passwordRepeatValue === passwordInput.value;
+            updateValidationStyles();
+        });
+
+        nickname.addEventListener('input', function() {
+            const nicknameValue = nickname.value;
+            nicknameFlag = nicknameValue.length > 0;
+            updateValidationStyles();
+        });
+
+        function updateValidationStyles() {
+            username.style.boxShadow = usernameFlag ? '0 0 10px green' : '0 0 10px red';
+            passwordInput.style.boxShadow = passwordInputFlag ? '0 0 10px green' : '0 0 10px red';
+            passwordRepeat.style.boxShadow = passwordRepeatFlag ? '0 0 10px green' : '0 0 10px red';
+            nickname.style.boxShadow = nicknameFlag ? '0 0 10px green' : '0 0 10px red';
+
+            const checkPasswordButton = document.getElementById('checkPassword');
+            checkPasswordButton.disabled = !(usernameFlag && passwordInputFlag && passwordRepeatFlag && nicknameFlag);
+        }</script>
+</body>
+</html>

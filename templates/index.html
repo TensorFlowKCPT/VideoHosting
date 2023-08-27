@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ваше видео хранилище</title>
+    <style>/* Стили для шапки */
+        body {
+            margin: 0;
+        }
+        
+        header {
+            background-color: #4d996a;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+        }
+        
+        /* Стили для навигации */
+        nav ul {
+            list-style: none;
+            padding: 0;
+            display: flex;
+        }
+        
+        nav li {
+            margin-right: 20px;
+        }
+        
+        nav a {
+            text-decoration: none;
+            color: #fff;
+        }
+        
+        /* Стили для контейнера видео */
+        .video-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .video {
+            margin: 10px;
+            max-width: 400px;
+            background-color: #ade9c4;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .video p {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        /* Стили для подвала */
+        footer {
+            background-color: #4d996a;
+            color: #fff;
+            text-align: center;
+            padding: 10px 0;
+        }
+        #pfp {
+            border-radius: 50%;
+        }
+        </style>
+</head>
+<body>
+    <!-- Шапка страницы -->
+    <header>
+        <div class="logo">
+            <img src="/image/logo.png" alt="Логотип">
+            <div>Лесной хостинг</div>
+        </div>
+        <nav>
+            <ul>
+                {% if data.auth == None %}
+                <li><a href="register">Регистрация</a></li>
+                {% endif %}
+                {% if data.auth != None %}
+                <li>
+                    <a href="profile">
+                        <img height="50" width="50" id="pfp" src="image/{{ data.picture }}" alt="">
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+            <div>
+                {% if data.auth != None %}
+                {{ data.auth }}
+                {% endif %}
+            </div>
+            <a href="">
+                <img src="" alt="">
+            </a>
+        </nav>
+    </header>
+
+    <!-- Контейнер для видео -->
+    <div class="video-container">
+        <!-- Видео 1 -->
+        <div class="video">
+            <video controls>
+                <source src="video1.mp4" type="video/mp4">
+                Ваш браузер не поддерживает воспроизведение видео.
+            </video>
+            <p>Описание видео 1</p>
+        </div>
+
+        <!-- Видео 2 -->
+        <div class="video">
+            <video controls>
+                <source src="video2.mp4" type="video/mp4">
+                Ваш браузер не поддерживает воспроизведение видео.
+            </video>
+            <p>Описание видео 2</p>
+        </div>
+
+        <!-- Добавьте другие видео здесь, если необходимо -->
+
+    </div>
+
+    <footer>
+        <p>&copy; 2023 Ваше видео хранилище</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
