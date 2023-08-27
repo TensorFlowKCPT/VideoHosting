@@ -67,11 +67,9 @@
   <div class="profile-container">
     <img class="profile-image" src="image/{{ account.PfpPath }}">
     <div class="profile-name">{{ account.Name }}</div>
-
-    <div class="profile-description">{{ account.Description }}</div>
-    <form action="save_description.php" method="POST">
+    <form action="newdescription" method="POST">
       <label for="description">Описание:</label>
-      <textarea id="description" name="description" rows="4" cols="50"></textarea>
+      <textarea id="description" name="description" rows="4" cols="50">{{ account.Description }}</textarea>
       <br>
       <input type="submit" value="Сохранить">
     </form>
