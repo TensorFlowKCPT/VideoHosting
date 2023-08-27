@@ -53,7 +53,7 @@ async def changedescription(request):
     template = env.get_template('MyAccount.html')
     cookies = str(request.cookies.get('Auth'))
     account_data = Database.GetUserData(Database.get_user_id(cookies))
-    return response.html(template.render(account=account_data))
+    return response.redirect("/profile/" +  Database.get_user_id(cookies))
 
 @app.route('/servevideo/<filename:str>')
 async def serve_video(request, filename):
@@ -156,35 +156,6 @@ async def upload_video(request):
             file.write(uploaded_videofile.body)
     Database.AddVideo(uploaded_videoname, random_name_video, uploaded_videodesc, Database.get_user_id(request.cookies.get('Auth')))
     return response.text('Файл успешно загружен')
-    
-
-def validationpassword(password:str, passwordrepeat:str):
-    len_password = False
-    if len(password) < 8:
-        len_password = False
-    else:
-        len_password = True
-
-    digits_in_password = True
-    # Проверка наличия цифр в пароле
-    if not any(char.isdigit() for char in password):
-        digits_in_password = False
-
-    char_in_password = True
-    # Проверка наличия букв в пароле
-    if not any(char.isalpha() for char in password):
-        char_in_password = False
-
-    punctuation_in_password = True
-    # Проверка наличия символов пунктуации в пароле
-    if not any(char in string.punctuation for char in password):
-        punctuation_in_password = False
-
-    checkpassword = True
-    if password != passwordrepeat:
-        checkpassword = False
-    
-    return len_password and digits_in_password and char_in_password and punctuation_in_password and checkpassword
 
 @app.route('/reg', methods=['POST'])
 async def reg(request):
