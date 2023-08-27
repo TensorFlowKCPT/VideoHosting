@@ -33,21 +33,10 @@ async def VideoPage(request, filename):
         }
         #Пример рекомендаций
         Data['recommended_videos'] = [
-        {
-            'name': 'Рикролл :D',
-            'link': 'prank.mp4',
-            'image': 'Rickroll.jpg'
-        },
-        {
-            'name': 'Рикролл :D',
-            'link': 'prank.mp4',
-            'image': 'no-photo.png'
-        },
-        {
-            'name': 'Рикролл :D',
-            'link': 'prank.mp4',
-            'image': 'maxresdefault.jpg'
-        }]
+            Database.GetRandomVideo(),
+            Database.GetRandomVideo(),
+            Database.GetRandomVideo()
+        ]
         template = env.get_template('video.html')
         # Отправляем HTML-страницу как ответ
         return response.html(template.render(data = Data))
