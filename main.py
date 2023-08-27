@@ -103,8 +103,6 @@ async def index(request):
         if request.cookies.get('Auth') != 'None' or request.cookies.get('Auth') != None:
             resp.cookies['Auth'] = None
         return resp
-        
-
 
 @app.route('/addvideo')
 async def addvideo(request):
@@ -115,14 +113,22 @@ async def addvideo(request):
     # Отправляем HTML-страницу как ответ
     return response.html(html_content)
 
-
-
 @app.route('/profile/<profilename:str>')
 async def account_info(request: Request, profilename):
     # Здесь вы можете получить информацию об аккаунте и передать ее в шаблон Jinja2
     template = env.get_template('MyAccount.html')
     account_data = Database.GetUserData(profilename)
+    account_data['UserVideos'] = Database.GetAllVideosByOwnerId(profilename)
     return response.html(template.render(account=account_data))
+
+def get_random_frame(video_path):
+    cap = cv2.VideoCapture(video_path)
+    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    random_frame_number = random.randint(0, frame_count - 1)
+    cap.set(cv2.CAP_PROP_POS_FRAMES, random_frame_number)
+    ret, frame = cap.read()
+    cap.release()
+    return frame
 
 @app.route('/videoupload', methods=['POST'])
 async def upload_video(request):
@@ -130,32 +136,31 @@ async def upload_video(request):
     uploaded_videoimage = request.files.get('image')
     uploaded_videoname = request.form.get('name')
     uploaded_videodesc = request.form.get('desc')
+    
     if not uploaded_videofile:
-        return response.text('Файл не загружен')
-
-    # Сохраните файл на сервере
+        return text('Файл не загружен')
+    
+    # Сохраните видеофайл на сервере
     random_name_video = generate_random_string(10)
-    file_path = os.path.join('video/', random_name_video + ".mp4")
-
-    with open(file_path, 'wb') as file:
+    video_file_path = os.path.join('video/', random_name_video + ".mp4")
+    
+    with open(video_file_path, 'wb') as file:
         file.write(uploaded_videofile.body)
-
+    
     if not uploaded_videoimage:
-        #Если пользак не загрузил фотку для видео - берем рандомный кадр из видоса
-        cap = cv2.VideoCapture(file_path)
-        frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        random_frame_number = random.randint(0, frame_count - 1)
-        cap.set(cv2.CAP_PROP_POS_FRAMES, random_frame_number)
-        ret, frame = cap.read()
-        cap.release()
-        random_screenshot_path = 'Images/'+random_name_video + ".png"
-        cv2.imwrite(random_screenshot_path, frame)
+        # Генерируем случайный скриншот из видео и сохраняем его как изображение
+        random_screenshot_path = os.path.join('Images/', random_name_video + ".png")
+        screenshot = get_random_frame(video_file_path)
+        cv2.imwrite(random_screenshot_path, screenshot)
     else:
-        file_path = os.path.join('Images/', random_name_video + ".png")
-        with open(file_path, 'wb') as file:
-            file.write(uploaded_videofile.body)
+        # Сохраняем загруженное изображение для видео
+        image_file_path = os.path.join('Images/', random_name_video + ".png")
+        with open(image_file_path, 'wb') as file:
+            file.write(uploaded_videoimage.body)
+
     Database.AddVideo(uploaded_videoname, random_name_video, uploaded_videodesc, Database.get_user_id(request.cookies.get('Auth')))
-    return response.text('Файл успешно загружен')
+    
+    return response.redirect('/profile/'+Database.get_user_id(request.cookies.get('Auth')))
 
 @app.route('/reg', methods=['POST'])
 async def reg(request):

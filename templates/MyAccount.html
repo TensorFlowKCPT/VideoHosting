@@ -65,7 +65,7 @@
     <h1>Лесной хостинг</h1>
   </header>
   <div class="profile-container">
-    <img class="profile-image" src="image/{{ account.PfpPath }}">
+    <img class="profile-image" src="/image/{{ account.PfpPath }}">
     <div class="profile-name">{{ account.Name }}</div>
     <form action="/newdescription" method="POST">
       <label for="description">Описание:</label>
@@ -75,14 +75,15 @@
     </form>
     <h2>Видео</h2>
     <div class="videos">
-      <div class="video">
-        <a href="video1.html"><img src="thumbnail1.jpg" alt="Видео 1"></a>
-        <div class="video-title">Название видео 1</div>
-      </div>
-      <div class="video">
-        <a href="video2.html"><img src="thumbnail2.jpg" alt="Видео 2"></a>
-        <div class="video-title">Название видео 2</div>
-      </div>
+      
+      {% for video in account['UserVideos'] %}
+      {% if video != None %}
+        <div class="video">
+          <a href="/video/{{video.Path}}"><img src="/image/{{video.ImagePath}}" alt="{{ video.Name }}"></a>
+          <div class="video-title">{{ video.Name }}</div>
+        </div>
+      {% endif %}
+      {% endfor %}
       <!-- Добавьте другие видео здесь -->
     </div>
   </div>
