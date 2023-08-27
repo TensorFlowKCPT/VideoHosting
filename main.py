@@ -29,7 +29,7 @@ env = Environment(
 async def VideoPage(request, filename):
     if os.path.exists('video/'+filename):
         Data = {
-             'videoname': filename
+             'Name': filename
         }
         #Пример рекомендаций
         Data['recommended_videos'] = [
@@ -57,8 +57,8 @@ async def changedescription(request):
 
 @app.route('/servevideo/<filename:str>')
 async def serve_video(request, filename):
-    video_path = 'video/' + filename
-
+    video_data = Database.GetVideoByPath(filename)
+    video_path = 'video/' + video_data['Path']
     # Открываем файл видео
     with open(video_path, 'rb') as video_file:
         video_data = video_file.read()
@@ -81,7 +81,7 @@ async def serve_video(request, filename):
         return response.raw(video_chunk, headers=headers, status=206)
 
     # Если Range не указан, отправляем весь файл
-    return await response.file(video_path, headers=headers)
+    return await response.file_stream(video_path, headers=headers)
 
 @app.route('/image/<filename:str>')
 async def serve_image(request, filename):
