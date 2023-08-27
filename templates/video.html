@@ -67,12 +67,14 @@
         </div>
         <div class="recommendations">
             {% for video in data['recommended_videos'] %}
+            {% if video != None %}
             <a href="/video/{{ video['Path'] }}">
                 <div class="video-card">
                     <img src="http://localhost:8000/image/{{ video['ImagePath'] }}" width="230" height="150" alt="Thumbnail">
                     <h3>{{ video['name'] }}</h3>
                 </div>
             </a>
+            {% endif %}
             {% endfor %}
         </div>
     </div>
