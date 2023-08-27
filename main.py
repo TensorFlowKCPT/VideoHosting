@@ -117,12 +117,11 @@ async def addvideo(request):
 
 
 
-@app.route('/profile')
-async def account_info(request: Request):
+@app.route('/profile/<profilename:str>')
+async def account_info(request: Request, profilename):
     # Здесь вы можете получить информацию об аккаунте и передать ее в шаблон Jinja2
     template = env.get_template('MyAccount.html')
-    cookies = str(request.cookies.get('Auth'))
-    account_data = Database.GetUserData(Database.get_user_id(cookies))
+    account_data = Database.GetUserData(profilename)
     return response.html(template.render(account=account_data))
 
 @app.route('/videoupload', methods=['POST'])

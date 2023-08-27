@@ -58,7 +58,7 @@
     </header>
     <div class="container">
         <video controls>
-            <source src='http://localhost:8000/servevideo/{{ data.videoname }}' type="video/mp4">
+            <source src='http://localhost:8000/servevideo/{{ data.Name }}' type="video/mp4">
             Ваш браузер не поддерживает воспроизведение видео.
         </video>
         <div class="video-info">
@@ -67,9 +67,9 @@
         </div>
         <div class="recommendations">
             {% for video in data['recommended_videos'] %}
-            <a href="/video/{{ video['link'] }}">
+            <a href="/video/{{ video['Path'] }}">
                 <div class="video-card">
-                    <img src="http://localhost:8000/image/{{ video['image'] }}" width="230" height="150" alt="Thumbnail">
+                    <img src="http://localhost:8000/image/{{ video['ImagePath'] }}" width="230" height="150" alt="Thumbnail">
                     <h3>{{ video['name'] }}</h3>
                 </div>
             </a>
