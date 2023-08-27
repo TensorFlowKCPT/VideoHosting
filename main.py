@@ -46,6 +46,15 @@ async def VideoPage(request, filename):
     # Отправляем HTML-страницу как ответ
     return response.html(html_content)
 
+@app.route('/newdescription', methods=["POST"])
+async def changedescription(request):
+    newdes = request.form.get('description')
+    Database.NewDescription(Database.get_user_id(request.cookies.get('Auth')), newdes)
+    template = env.get_template('MyAccount.html')
+    cookies = str(request.cookies.get('Auth'))
+    account_data = Database.GetUserData(Database.get_user_id(cookies))
+    return response.html(template.render(account=account_data))
+
 @app.route('/servevideo/<filename:str>')
 async def serve_video(request, filename):
     video_path = 'video/' + filename
@@ -105,6 +114,8 @@ async def addvideo(request):
 
     # Отправляем HTML-страницу как ответ
     return response.html(html_content)
+
+
 
 @app.route('/profile')
 async def account_info(request: Request):

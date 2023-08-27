@@ -52,11 +52,15 @@ async def login(request):
 
     def LoginExists(Login):
         with sqlite3.connect('database.db') as conn:
-            cursor = conn.execute('Select Login From Users Where Login = ?' (Login,)) 
+            cursor = conn.execute('Select Login From Users Where Login = ?', (Login,)) 
             row = cursor.fetchone()
             if row:
                 return True
             return False
+
+    def NewDescription(Login, NewDescription):
+        with sqlite3.connect('database.db') as conn:
+            conn.execute("UPDATE Users SET Description = ? where Login = ? ", (NewDescription, Login, ))
 
     def AddVideo(Name, Path, Description, OwnerLogin):
         with sqlite3.connect('database.db') as conn:
