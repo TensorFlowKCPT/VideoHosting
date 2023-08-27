@@ -95,15 +95,17 @@ async def index(request):
     # Открываем файл с HTML-страницей и считываем его содержимое
     with open('templates/index.html', 'r', encoding="UTF-8") as file:
         html_content = file.read()
-
-    if Database.get_user_id(request.cookies.get('Auth')) != None: 
-        Data = {"auth":Database.get_user_id(request.cookies.get('Auth')), 'picture': Database.GetUserData(Database.get_user_id(request.cookies.get('Auth')))["PfpPath"]}
-        print(Database.GetUserData(Database.get_user_id(request.cookies.get('Auth')))["PfpPath"])
-        template = env.get_template('index.html')
-        return response.html(template.render(data = Data))
+    template = env.get_template('index.html')
+    if Database.get_user_id(request.cookies.get('Auth')) != None and Database.get_user_id(request.cookies.get('Auth')) != 'None':
+            Data = {"auth":Database.get_user_id(request.cookies.get('Auth')), 'picture': Database.GetUserData(Database.get_user_id(request.cookies.get('Auth')))["PfpPath"]}
+            return response.html(template.render(data = Data))
     else:
-        template = env.get_template('index.html')
-        return response.html(html_content)
+        Data = {"auth":Database.get_user_id(request.cookies.get('Auth')), 'picture': None}
+        resp = html(template.render(data = Data))
+        if request.cookies.get('Auth') != 'None' or request.cookies.get('Auth') != None:
+            resp.cookies['Auth'] = None
+        return resp
+        
 
 
 @app.route('/addvideo')
@@ -218,7 +220,7 @@ async def log(request):
         if Database.LoginUser(Login,request.form.get('password')) != None:
              Database.create_session(cookiestring, Login)
         response = redirect('/')
-        response.cookies['Auth'] = None
+        response.cookies['Auth'] = cookiestring
         return response
 
 @app.route('/login')
@@ -237,7 +239,7 @@ async def check(request):
     return response.text(request.cookies.get('Auth'))
 @app.route("/reset")
 async def reset(request):
-    response = text("Reset")
+    response = text('Ok')
     response.cookies['Auth'] = None
     return response
 

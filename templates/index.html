@@ -80,22 +80,22 @@
             <ul>
                 {% if data.auth == None %}
                 <li><a href="register">Регистрация</a></li>
+                <li><a href="login">Войти</a></li>
                 {% endif %}
                 {% if data.auth != None %}
                 <li>
-                    <a href="profile">
+                    <a href="profile/{{ data.auth }}">
                         <img height="50" width="50" id="pfp" src="image/{{ data.picture }}" alt="">
                     </a>
                 </li>
                 {% endif %}
             </ul>
-            <div>
-                {% if data.auth != None %}
-                {{ data.auth }}
-                {% endif %}
-            </div>
-            <a href="">
-                <img src="" alt="">
+            <a>
+                <div>
+                    {% if data.auth != None %}
+                    {{ data.auth }}
+                    {% endif %}
+                </div>
             </a>
         </nav>
     </header>
