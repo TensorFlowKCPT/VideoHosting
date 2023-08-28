@@ -57,13 +57,16 @@
         <h1>Video Title</h1>
     </header>
     <div class="container">
-        <video controls>
-            <source src='/servevideo/{{ data.Name }}' type="video/mp4">
+        <video controls id="videoContainer" data-id="{{ data.id }}">
+            <source src='/servevideo/{{ data.Path }}' type="video/mp4">
             Ваш браузер не поддерживает воспроизведение видео.
         </video>
         <div class="video-info">
-            <h2>Video Title</h2>
-            <p>Video description goes here.</p>
+            <button id="likeButton">Лайк {{ data.Reactions.Likes }}</button>
+            <button id="dislikeButton">Дизлайк {{ data.Reactions.Dislikes }}</button>
+            <h2>{{ data.Name }}</h2> 
+            <p>{{ data.ViewCount }} Просмотров</p>
+            <p>Описание: {{ data.Description }}</p>
         </div>
         <div class="recommendations">
             {% for video in data['recommended_videos'] %}
@@ -79,4 +82,42 @@
         </div>
     </div>
 </body>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    const likeButton = document.getElementById('likeButton');
+    const dislikeButton = document.getElementById('dislikeButton');
+    const videoId = document.getElementById('videoContainer').getAttribute('data-id'); // Получение id видео
+
+    likeButton.addEventListener('click', function() {
+        sendReaction(videoId, 1); // 1 означает лайк
+    });
+
+    dislikeButton.addEventListener('click', function() {
+        sendReaction(videoId, 0); // 0 означает дизлайк
+    });
+
+    function sendReaction(videoId, isLike) {
+        var xhr = new XMLHttpRequest();
+        var method = 'POST';
+        var url = '/react/video';
+
+        xhr.open(method, url, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                console.log('Реакция отправлена успешно');
+            } else {
+                console.error('Произошла ошибка при отправке реакции.');
+            }
+        };
+
+        xhr.onerror = function() {
+            console.error('Произошла ошибка при выполнении запроса.');
+        };
+
+        xhr.send(JSON.stringify({ VideoId: videoId, IsLike: isLike }));
+    }
+});
+</script>
 </html>

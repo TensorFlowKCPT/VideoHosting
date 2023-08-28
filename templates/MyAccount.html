@@ -78,7 +78,7 @@
       
       {% for video in account['UserVideos'] %}
       {% if video != None %}
-        <a>
+        <a href="/video/{{ video.Path }}">
           <div class="video">
             <div><img src="/image/{{video.ImagePath}}" alt="{{ video.Name }}"></div>
             <div class="video-title">{{ video.Name }}</div>

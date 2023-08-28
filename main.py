@@ -25,12 +25,25 @@ env = Environment(
     autoescape=select_autoescape(['html', 'xml'])
 )
 
+@app.post('/react/video')
+async def react_on_video(request):
+    if Database.IsVideoReacted(Database.get_user_id(request.cookies.get('Auth')),request.json['VideoId']):
+        Database.UnreactVideo(Database.get_user_id(request.cookies.get('Auth')),request.json['VideoId'])
+        return json({'message': 'Реакция удалена'})
+    else:
+        Database.ReactOnVideo(Database.get_user_id(request.cookies.get('Auth')),request.json['VideoId'], request.json['IsLike'])
+        return json({'message': 'Реакция сохранена'})
+    
+
+
+
 @app.route('/video/<filename:str>')
 async def VideoPage(request, filename):
     if os.path.exists('video/'+filename):
-        Data = {
-             'Name': filename
-        }
+        Data = Database.GetVideoByPath(filename)
+        Data['ViewCount'] = Database.GetVideoWatchesCount(Data['id'])
+        Data['Reactions'] = Database.GetVideoReactions(Data['id'])
+        Database.AddVideoToWatchList(Database.get_user_id(request.cookies.get('Auth')),Data['id'])
         #Пример рекомендаций
         Data['recommended_videos'] = [
             Database.GetRandomVideo(),
@@ -212,6 +225,29 @@ async def register(request):
         response = html(html_content)
         return response
     
+@app.route('/log', methods=['POST'])
+async def log(request):
+        cookiestring = generate_random_string(10)
+        while not Database.CookieExists(cookiestring):
+             cookiestring = generate_random_string(10)
+        Login = request.form.get('username')
+        if Database.LoginUser(Login,request.form.get('password')) != None:
+             Database.create_session(cookiestring, Login)
+        response = redirect('/')
+        response.cookies['Auth'] = cookiestring
+        return response
+
+@app.route('/login')
+async def login(request):
+    cookies = str(request.cookies.get('Auth'))
+    if cookies != 'None':
+            response = redirect('/')
+            return response
+    with open('templates/login.html', 'r', encoding="UTF-8") as file:
+        html_content = file.read()
+        response = html(html_content)
+    # Отправляем HTML-страницу как ответ
+    return response 
 @app.route("/check")
 async def check(request):
     return response.text(request.cookies.get('Auth'))

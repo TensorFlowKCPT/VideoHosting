@@ -33,35 +33,125 @@ async def login(request):
                 }
                 videos.append(video)
         return videos
-    
-    def GetVideoById(id):
+    def GetVideoReactions(VideoId):
         with sqlite3.connect('database.db') as conn:
-            cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime FROM Videos WHERE id = ?', (id,))
+            cursor = conn.execute('''SELECT 
+                                  SUM(CASE WHEN IsLike = 1 THEN 1 ELSE 0 END) AS LikesCount,
+                                  SUM(CASE WHEN IsLike = 0 THEN 1 ELSE 0 END) AS DislikesCount
+                                  FROM VideoReactions 
+                                  WHERE VideoId = ?''', (VideoId,))
             row = cursor.fetchone()
             if row:
-                return {'Name':row[0], 'Path':row[1], 'ImagePath':row[2],'Description':row[3],'OwnerId':row[4], 'DateTime':datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S")}
+                return {'Likes': row[0], 'Dislikes':row[1]}
             return None
-        
+    def GetVideoById(id):
+        with sqlite3.connect('database.db') as conn:
+            cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime, id FROM Videos WHERE id = ?', (id,))
+            row = cursor.fetchone()
+            if row:
+                return {'Id': row[6], 'Name':row[0], 'Path':row[1], 'ImagePath':row[2],'Description':row[3],'OwnerId':row[4], 'DateTime':datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S")}
+            return None
+    
+    def UnreactVideo(UserId, VideoId):
+        with sqlite3.connect('database.db') as conn:
+            conn.execute('DELETE FROM VideoReactions WHERE ReactorId = ? AND VideoId = ?', (UserId, VideoId,))
+
+    def IsVideoReacted(UserId, VideoId):
+        with sqlite3.connect('database.db') as conn:
+            cursor = conn.execute('SELECT Count() FROM VideoReactions WHERE ReactorId = ? AND VideoId = ?', (UserId, VideoId,))
+            row = cursor.fetchone()
+            return int(row[0]) == 1
+    def ReactOnVideo(UserId, VideoId, IsLike):
+        with sqlite3.connect('database.db') as conn:
+            conn.execute('INSERT INTO VideoReactions (VideoId, ReactorId, IsLike) VALUES (?, ?, ?)', (VideoId, UserId, IsLike,))
+
     def GetVideoByPath(Path):
         with sqlite3.connect('database.db') as conn:
-            cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime FROM Videos WHERE Path = ?', (Path,))
+            cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime, id FROM Videos WHERE Path = ?', (Path,))
             row = cursor.fetchone()
             try:
                 if row:
-                    return {'Name':row[0], 'Path':row[1], 'ImagePath':row[2],'Description':row[3],'OwnerId':row[4], 'DateTime':datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S")}
+                    return {'Name':row[0], 'Path':row[1], 'ImagePath':row[2],'Description':row[3],'OwnerId':row[4], 'DateTime':datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S"), 'id':row[6]}
                 return None
             except:
                 return None
         
     def GetRandomVideo():
-        with sqlite3.connect('database.db') as conn:
-            cursor = conn.execute('SELECT COUNT() FROM Videos')
-            row = cursor.fetchone()
-            return Database.GetVideoById(random.randint(1,int(row[0]-1)))
+        try:
+            with sqlite3.connect('database.db') as conn:
+                cursor = conn.execute('SELECT COUNT() FROM Videos')
+                row = cursor.fetchone()
+                return Database.GetVideoById(random.randint(1,int(row[0]-1)))
+        except ValueError:
+            return None
     def CookieExists(cookiestring):
         if(Database.GetUserData(cookiestring)!=None):
             return False
         else: return True
+    
+    def GetVideoWatchesCount(VideoId):
+        with sqlite3.connect('database.db') as conn:
+            cursor = conn.execute('SELECT COUNT() FROM VideoWatches Where VideoId = ?', (VideoId,))
+            row = cursor.fetchone()
+            return row[0]
+
+    def AddVideoToWatchList(UserId, VideoId):
+        with sqlite3.connect('database.db') as conn:
+            conn.execute('INSERT INTO VideoWatches (WatcherId, VideoId) VALUES (?, ?)', ( UserId, VideoId,))
+
+    def UnreactComment(UserId, CommentId):
+        with sqlite3.connect('database.db') as conn:
+            conn.execute('DELETE FROM CommentReactions WHERE ReactorId = ? AND CommentId = ?', (UserId, CommentId,))
+
+    
+    def ReactOnComment(UserId, CommentId, IsLike):
+        with sqlite3.connect('database.db') as conn:
+            conn.execute('INSERT INTO CommentReactions (CommentId, ReactorId, IsLike) VALUES (?, ?, ?)', (CommentId, UserId, IsLike,))
+
+
+    def CommentReacted(UserId, CommentId):
+        with sqlite3.connect('database.db') as conn:
+            cursor = conn.execute('SELECT COUNT(), IsLike FROM CommentReactions Where CommentatorId = ? And CommentId = ?', (UserId, CommentId,))
+            row = cursor.fetchone()
+            return {'IsReacted': row[0], 'IsLike': row[1]}
+
+    def GetAllVideoComments(VideoId):
+        with sqlite3.connect('database.db') as conn:
+            cursor = conn.execute('''
+                SELECT
+                    Comments.CommentatorId,
+                    Comments.VideoId,
+                    Comments.Text,
+                    Comments.DateTime,
+                    SUM(CASE WHEN CommentReactions.IsLike = 1 THEN 1 ELSE 0 END) AS LikesCount,
+                    SUM(CASE WHEN CommentReactions.IsLike = 0 THEN 1 ELSE 0 END) AS DislikesCount
+                FROM
+                    Comments
+                JOIN
+                    CommentReactions ON Comments.id = CommentReactions.CommentId
+                WHERE
+                    Comments.VideoId = ?
+                GROUP BY
+                    Comments.CommentatorId, Comments.VideoId, Comments.Text, Comments.DateTime
+            ''', (VideoId,))
+
+            rows = cursor.fetchall()
+            comments = []
+            try:
+                for row in rows:
+                    if row:
+                        comments.append({
+                            'Commentator': row[0],
+                            'Video': row[1],
+                            'Text': row[2],
+                            'DateTime': datetime.datetime.strptime(row[3], "%Y-%m-%d %H:%M:%S"),
+                            'LikesCount': row[4],
+                            'DislikesCount': row[5]
+                        })
+                return comments
+            except:
+                return comments
+
 
     def LoginExists(Login):
         with sqlite3.connect('database.db') as conn:
