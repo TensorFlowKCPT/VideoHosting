@@ -121,15 +121,6 @@ async def account_info(request: Request, profilename):
     account_data['UserVideos'] = Database.GetAllVideosByOwnerId(profilename)
     return response.html(template.render(account=account_data))
 
-def get_random_frame(video_path):
-    cap = cv2.VideoCapture(video_path)
-    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    random_frame_number = random.randint(0, frame_count - 1)
-    cap.set(cv2.CAP_PROP_POS_FRAMES, random_frame_number)
-    ret, frame = cap.read()
-    cap.release()
-    return frame
-
 @app.route('/videoupload', methods=['POST'])
 async def upload_video(request):
     uploaded_videofile = request.files.get('video')
@@ -146,12 +137,14 @@ async def upload_video(request):
     
     with open(video_file_path, 'wb') as file:
         file.write(uploaded_videofile.body)
-    
-    if not uploaded_videoimage:
-        # Генерируем случайный скриншот из видео и сохраняем его как изображение
-        random_screenshot_path = os.path.join('Images/', random_name_video + ".png")
-        screenshot = get_random_frame(video_file_path)
-        cv2.imwrite(random_screenshot_path, screenshot)
+    if uploaded_videoimage.name == '':
+        vidcap = cv2.VideoCapture(os.path.join('video/', random_name_video + ".mp4"))
+        totalFrames = vidcap.get(cv2.CAP_PROP_FRAME_COUNT)
+        randomFrameNumber=random.randint(0, totalFrames)
+        vidcap.set(cv2.CAP_PROP_POS_FRAMES,randomFrameNumber)
+        success, image = vidcap.read()
+        if success:
+            cv2.imwrite(os.path.join('Images/', random_name_video + ".png"), image)
     else:
         # Сохраняем загруженное изображение для видео
         image_file_path = os.path.join('Images/', random_name_video + ".png")
@@ -214,7 +207,7 @@ async def check(request):
     return response.text(request.cookies.get('Auth'))
 @app.route("/reset")
 async def reset(request):
-    response = text('Ok')
+    response = redirect('/')
     response.cookies['Auth'] = None
     return response
 

@@ -78,10 +78,12 @@
       
       {% for video in account['UserVideos'] %}
       {% if video != None %}
-        <div class="video">
-          <a href="/video/{{video.Path}}"><img src="/image/{{video.ImagePath}}" alt="{{ video.Name }}"></a>
-          <div class="video-title">{{ video.Name }}</div>
-        </div>
+        <a>
+          <div class="video">
+            <div><img src="/image/{{video.ImagePath}}" alt="{{ video.Name }}"></div>
+            <div class="video-title">{{ video.Name }}</div>
+          </div>
+        </a>
       {% endif %}
       {% endfor %}
       <!-- Добавьте другие видео здесь -->
