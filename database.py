@@ -81,11 +81,11 @@ async def login(request):
             with sqlite3.connect('database.db') as conn:
                 cursor = conn.execute('SELECT COUNT() FROM Videos')
                 row = cursor.fetchone()
-                return Database.GetVideoById(random.randint(1,int(row[0]-1)))
+                return Database.GetVideoById(random.randint(1,int(row[0])))
         except ValueError:
             return None
     def CookieExists(cookiestring):
-        if(Database.GetUserData(cookiestring)!=None):
+        if(Database.GetUserData(Database.get_user_id(cookiestring))!=None):
             return False
         else: return True
     
@@ -115,42 +115,44 @@ async def login(request):
             row = cursor.fetchone()
             return {'IsReacted': row[0], 'IsLike': row[1]}
 
-    def GetAllVideoComments(VideoId):
+    def CommentVideo(UserId, Text, VideoId):
         with sqlite3.connect('database.db') as conn:
-            cursor = conn.execute('''
-                SELECT
-                    Comments.CommentatorId,
-                    Comments.VideoId,
-                    Comments.Text,
-                    Comments.DateTime,
-                    SUM(CASE WHEN CommentReactions.IsLike = 1 THEN 1 ELSE 0 END) AS LikesCount,
-                    SUM(CASE WHEN CommentReactions.IsLike = 0 THEN 1 ELSE 0 END) AS DislikesCount
-                FROM
-                    Comments
-                JOIN
-                    CommentReactions ON Comments.id = CommentReactions.CommentId
-                WHERE
-                    Comments.VideoId = ?
-                GROUP BY
-                    Comments.CommentatorId, Comments.VideoId, Comments.Text, Comments.DateTime
-            ''', (VideoId,))
+            conn.execute('INSERT INTO Comments (CommentatorId, Text, VideoId, DateTime) VALUES (?, ?, ?, ?)', (UserId, Text, VideoId, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
-            rows = cursor.fetchall()
-            comments = []
-            try:
+    def GetAllVideoComments(VideoId):
+        #try:
+            with sqlite3.connect('database.db') as conn:
+                cursor = conn.execute('''
+                    SELECT
+                        CommentatorId,
+                        VideoId,
+                        Text,
+                        DateTime
+                    FROM Comments 
+                    Where VideoId = ?  
+                ''', (VideoId,))
+
+                rows = cursor.fetchall()
+                comments = []
+
                 for row in rows:
-                    if row:
-                        comments.append({
-                            'Commentator': row[0],
-                            'Video': row[1],
-                            'Text': row[2],
-                            'DateTime': datetime.datetime.strptime(row[3], "%Y-%m-%d %H:%M:%S"),
-                            'LikesCount': row[4],
-                            'DislikesCount': row[5]
-                        })
+                    comment = {
+                        'Commentatorid': row[0],
+                        'Video': row[1],
+                        'Text': row[2],
+                        'DateTime': datetime.datetime.strptime(row[3], "%Y-%m-%d %H:%M:%S")
+                    }
+
+                    commentator_data = Database.GetUserData(comment['Commentatorid'])
+                    if commentator_data:
+                        comment['CommentatorNickname'] = commentator_data['Name']
+
+                    comments.append(comment)
+
                 return comments
-            except:
-                return comments
+        #except Exception as e:
+        #    print(f"An error occurred: {e}")
+        #    return []
 
 
     def LoginExists(Login):
@@ -198,7 +200,7 @@ async def login(request):
             return None
     def reg_user(SessionId,Login,Password, Nickname):
         with sqlite3.connect('database.db') as conn:
-            conn.execute('INSERT INTO Users (Login, Password, Name, PfpPath) VALUES (?, ?, ?, ?)', (Login, Password, Nickname, "no-photo.png"))
+            conn.execute('INSERT INTO Users (Login, Password, Name, PfpPath) VALUES (?, ?, ?, ?)', (Login, Password, Nickname, Login+'.png'))
             
         Database.create_session(SessionId,Login)
     def get_video_comments(videoid):
@@ -261,7 +263,7 @@ async def login(request):
             conn.execute('''
                  CREATE TABLE IF NOT EXISTS VideoWatches (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    WatcherId TEXT NOT NULL,
+                    WatcherId TEXT,
                     VideoId INTEGER NOT NULL,
                     FOREIGN KEY (WatcherId) REFERENCES Users (Login)
                     FOREIGN KEY (VideoId) REFERENCES Videos (id)

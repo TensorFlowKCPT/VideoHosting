@@ -56,6 +56,19 @@
             font-size: 14px;
             color: #333;
         }
+        .recommendations {
+            display: flex;
+            flex-wrap: nowrap; /* Это обеспечивает одну линию без переноса */
+            overflow-x: auto; /* Добавляет горизонтальный скролл, если контент не помещается */
+        }
+        
+        .video-card {
+            margin-right: 20px; /* Добавьте некоторые отступы между карточками для лучшего визуального разделения */
+        }
+        
+        .video-link {
+            text-decoration: none; /* Убираем стандартное подчеркивание ссылок */
+        }
         
         /* Стили для подвала */
         footer {
@@ -100,28 +113,17 @@
         </nav>
     </header>
 
-    <!-- Контейнер для видео -->
-    <div class="video-container">
-        <!-- Видео 1 -->
-        <div class="video">
-            <video controls>
-                <source src="video1.mp4" type="video/mp4">
-                Ваш браузер не поддерживает воспроизведение видео.
-            </video>
-            <p>Описание видео 1</p>
-        </div>
-
-        <!-- Видео 2 -->
-        <div class="video">
-            <video controls>
-                <source src="video2.mp4" type="video/mp4">
-                Ваш браузер не поддерживает воспроизведение видео.
-            </video>
-            <p>Описание видео 2</p>
-        </div>
-
-        <!-- Добавьте другие видео здесь, если необходимо -->
-
+    <div class="recommendations">
+        {% for video in data['recommended_videos'] %}
+        {% if video != None %}
+        <a href="/video/{{ video['Path'] }}" class="video-link">
+            <div class="video-card">
+                <img src="/image/{{ video['ImagePath'] }}" width="230" height="150" alt="Thumbnail">
+                <h3>{{ video['Name'] }}</h3>
+            </div>
+        </a>
+        {% endif %}
+        {% endfor %}
     </div>
 
     <footer>

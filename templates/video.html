@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Player</title>
+    <title>{{ data.Name }} - Video Player</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -50,34 +50,79 @@
             padding: 10px;
             background-color: white;
         }
+
+        .pfp {
+            border-radius: 50%;
+        }
+        
+        /* Additional styling for like and dislike buttons */
+        #likeButton, #dislikeButton {
+            margin-right: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        
+        /* Additional styling for profile link */
+        .profile-link {
+            text-decoration: none;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
     <header>
-        <h1>Video Title</h1>
+        <h1>{{ data.Name }}</h1>
     </header>
     <div class="container">
         <video controls id="videoContainer" data-id="{{ data.id }}">
             <source src='/servevideo/{{ data.Path }}' type="video/mp4">
-            Ваш браузер не поддерживает воспроизведение видео.
+            Your browser does not support video playback.
         </video>
         <div class="video-info">
-            <button id="likeButton">Лайк {{ data.Reactions.Likes }}</button>
-            <button id="dislikeButton">Дизлайк {{ data.Reactions.Dislikes }}</button>
+            <button id="likeButton">Like {{ data.Reactions.Likes }}</button>
+            <button id="dislikeButton">Dislike {{ data.Reactions.Dislikes }}</button>
             <h2>{{ data.Name }}</h2> 
-            <p>{{ data.ViewCount }} Просмотров</p>
-            <p>Описание: {{ data.Description }}</p>
+            <p>{{ data.ViewCount }} Views</p>
+            <a href="/profile/{{ data.OwnerId }}" class="profile-link">
+                <img class="pfp" height="50" width="50" src="/image/{{ data.OwnerId }}.png" alt="Profile Picture">
+                <p>{{data.OwnerNickname}}</p>
+            </a>
+            <p>Description: {{ data.Description }}</p>
         </div>
         <div class="recommendations">
             {% for video in data['recommended_videos'] %}
-            {% if video != None %}
-                <a href="/video/{{ video['Path'] }}"></a>
-                    <div class="video-card">
-                        <img  src="/image/{{ video['ImagePath'] }}" width="230" height="150" alt="Thumbnail" href="/video/{{ video['Path'] }}">
-                        <h3>{{ video['Name'] }}</h3>
-                    </div>
-                </a>
+            {% if video %}
+            <a href="/video/{{ video['Path'] }}" class="video-link">
+                <div class="video-card">
+                    <img src="/image/{{ video['ImagePath'] }}" width="230" height="150" alt="Thumbnail">
+                    <h3>{{ video['Name'] }}</h3>
+                </div>
+            </a>
             {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    <div class="comments">
+        <h2>Comments</h2>
+        <div class="comment-form">
+            <textarea id="commentText" placeholder="Write a comment..."></textarea>
+            <button id="commentButton">Comment</button>
+        </div>
+        <div class="comment-list">
+            {% for comment in data['comments'] %}
+                <div class="comment">
+                    <a href="/profile/{{ comment['Commentatorid'] }}" class="profile-link">
+                        <img class="pfp" height="30" width="30" src="/image/{{ comment['Commentatorid'] }}.png" alt="Profile Picture">
+                        <p>{{ comment['CommentatorNickname'] }}</p>
+                    </a>
+                    <p>{{ comment['Text'] }}</p>
+                </div>
             {% endfor %}
         </div>
     </div>
@@ -86,14 +131,14 @@
     document.addEventListener('DOMContentLoaded', function() {
     const likeButton = document.getElementById('likeButton');
     const dislikeButton = document.getElementById('dislikeButton');
-    const videoId = document.getElementById('videoContainer').getAttribute('data-id'); // Получение id видео
+    const videoId = document.getElementById('videoContainer').getAttribute('data-id');
 
     likeButton.addEventListener('click', function() {
-        sendReaction(videoId, 1); // 1 означает лайк
+        sendReaction(videoId, 1); // 1 for like
     });
 
     dislikeButton.addEventListener('click', function() {
-        sendReaction(videoId, 0); // 0 означает дизлайк
+        sendReaction(videoId, 0); // 0 for dislike
     });
 
     function sendReaction(videoId, isLike) {
@@ -106,18 +151,63 @@
 
         xhr.onload = function() {
             if (xhr.status === 200) {
-                console.log('Реакция отправлена успешно');
+                console.log('Reaction sent successfully');
             } else {
-                console.error('Произошла ошибка при отправке реакции.');
+                console.error('An error occurred while sending the reaction.');
             }
         };
 
         xhr.onerror = function() {
-            console.error('Произошла ошибка при выполнении запроса.');
+            console.error('An error occurred while executing the request.');
         };
 
         xhr.send(JSON.stringify({ VideoId: videoId, IsLike: isLike }));
+        location.reload()
     }
+});
+document.addEventListener('DOMContentLoaded', function() {
+    const commentButton = document.getElementById('commentButton');
+    const commentText = document.getElementById('commentText');
+    const commentList = document.querySelector('.comment-list');
+    const videoId = document.getElementById('videoContainer').getAttribute('data-id');
+
+    commentButton.addEventListener('click', function() {
+        const text = commentText.value;
+        if (text.trim() === '') {
+            alert('Please enter a comment.');
+            return;
+        }
+        
+        sendComment(videoId, text);
+    });
+
+    function sendComment(videoId, text) {
+        var xhr = new XMLHttpRequest();
+        var method = 'POST';
+        var url = '/comment/video';
+
+        xhr.open(method, url, true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                console.log('Comment sent successfully');
+                // Assuming the response contains the new comment data
+                const newComment = JSON.parse(xhr.responseText);
+                appendComment(newComment);
+            } else {
+                console.error('An error occurred while sending the comment.');
+            }
+        };
+
+        xhr.onerror = function() {
+            console.error('An error occurred while executing the request.');
+        };
+
+        xhr.send(JSON.stringify({ VideoId: videoId, Text: text }));
+        location.reload()
+    }
+    
 });
 </script>
 </html>
