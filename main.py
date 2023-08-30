@@ -8,6 +8,7 @@ from sanic import Sanic
 from sanic.response import text, html
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from sanic.request import Request
+from PIL import Image
 
 
 
@@ -33,8 +34,10 @@ async def react_on_video(request):
     else:
         Database.ReactOnVideo(Database.get_user_id(request.cookies.get('Auth')),request.json['VideoId'], request.json['IsLike'])
         return json({'message': 'Реакция сохранена'})
-    
-
+@app.post('/comment/video')
+async def comment_video(request):
+    Database.CommentVideo(Database.get_user_id(request.cookies.get('Auth')), request.json['Text'], request.json['VideoId'])
+    return json({'message': 'Реакция сохранена'})
 
 
 @app.route('/video/<filename:str>')
@@ -43,6 +46,10 @@ async def VideoPage(request, filename):
         Data = Database.GetVideoByPath(filename)
         Data['ViewCount'] = Database.GetVideoWatchesCount(Data['id'])
         Data['Reactions'] = Database.GetVideoReactions(Data['id'])
+        for i in Data['Reactions']:
+            if Data['Reactions'][i] is None:
+                Data['Reactions'][i] = 0
+        Data['OwnerNickname'] = Database.GetUserData(Data['OwnerId'])['Name']
         Database.AddVideoToWatchList(Database.get_user_id(request.cookies.get('Auth')),Data['id'])
         #Пример рекомендаций
         Data['recommended_videos'] = [
@@ -50,6 +57,7 @@ async def VideoPage(request, filename):
             Database.GetRandomVideo(),
             Database.GetRandomVideo()
         ]
+        Data['comments'] = Database.GetAllVideoComments(Data['id'])
         template = env.get_template('video.html')
         # Отправляем HTML-страницу как ответ
         return response.html(template.render(data = Data))
@@ -214,10 +222,15 @@ async def reg(request):
     cookiestring = generate_random_string(10)
     while(not Database.CookieExists(cookiestring)):
         cookiestring = generate_random_string(10)
+    
     Database.reg_user(cookiestring, request.form.get('username'), request.form.get('password'), request.form.get('nickname'))
     response = redirect('/')
     response.cookies.add_cookie('Auth',cookiestring)
-    
+    original_image = Image.open('Images/no-photo.png')
+    copy_image = original_image.copy()
+    copy_image.save('Images/'+request.form.get('username')+'.png')
+    original_image.close()
+    copy_image.close()
     return response
 
 @app.route('/register')
