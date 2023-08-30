@@ -103,19 +103,30 @@ async def serve_image(request, filename):
 
 @app.route('/')
 async def index(request):
-    # Открываем файл с HTML-страницей и считываем его содержимое
-    with open('templates/index.html', 'r', encoding="UTF-8") as file:
-        html_content = file.read()
     template = env.get_template('index.html')
-    if Database.get_user_id(request.cookies.get('Auth')) != None and Database.get_user_id(request.cookies.get('Auth')) != 'None':
-            Data = {"auth":Database.get_user_id(request.cookies.get('Auth')), 'picture': Database.GetUserData(Database.get_user_id(request.cookies.get('Auth')))["PfpPath"]}
-            return response.html(template.render(data = Data))
+    data = {
+        'recommended_videos': [Database.GetRandomVideo() for _ in range(5)]
+    }
+    
+    auth_cookie = request.cookies.get('Auth')
+    if auth_cookie and auth_cookie != 'None':
+        user_id = Database.get_user_id(auth_cookie)
+        if user_id and user_id != 'None':
+            data['auth'] = user_id
+            user_data = Database.GetUserData(user_id)
+            if user_data:
+                data['picture'] = user_data["PfpPath"]
     else:
-        Data = {"auth":Database.get_user_id(request.cookies.get('Auth')), 'picture': None}
-        resp = html(template.render(data = Data))
-        if request.cookies.get('Auth') != 'None' or request.cookies.get('Auth') != None:
-            resp.cookies['Auth'] = None
-        return resp
+        data["auth"] = None
+        data['picture'] = None
+        
+    resp_data = template.render(data=data)
+    resp = response.html(resp_data)
+    
+    if auth_cookie and auth_cookie != 'None':
+        resp.cookies['Auth'] = None
+        
+    return resp
 
 @app.route('/addvideo')
 async def addvideo(request):

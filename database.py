@@ -252,7 +252,7 @@ async def login(request):
             conn.execute('''
                  CREATE TABLE IF NOT EXISTS VideoWatches (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    WatcherId TEXT NOT NULL,
+                    WatcherId TEXT,
                     VideoId INTEGER NOT NULL,
                     FOREIGN KEY (WatcherId) REFERENCES Users (Login)
                     FOREIGN KEY (VideoId) REFERENCES Videos (id)
