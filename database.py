@@ -77,15 +77,15 @@ async def login(request):
                 return None
         
     def GetRandomVideo():
-        try:
+        #try:
             with sqlite3.connect('database.db') as conn:
                 cursor = conn.execute('SELECT COUNT() FROM Videos')
                 row = cursor.fetchone()
-                return Database.GetVideoById(random.randint(1,int(row[0]-1)))
-        except ValueError:
-            return None
+                return Database.GetVideoById(random.randint(1,int(row[0])))
+        #except ValueError:
+        #    return None
     def CookieExists(cookiestring):
-        if(Database.GetUserData(cookiestring)!=None):
+        if(Database.GetUserData(Database.get_user_id(cookiestring))!=None):
             return False
         else: return True
     

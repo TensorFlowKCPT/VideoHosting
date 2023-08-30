@@ -54,7 +54,7 @@
 </head>
 <body>
     <header>
-        <h1>Video Title</h1>
+        <h1>{{ data.Name }}</h1>
     </header>
     <div class="container">
         <video controls id="videoContainer" data-id="{{ data.id }}">
@@ -71,12 +71,12 @@
         <div class="recommendations">
             {% for video in data['recommended_videos'] %}
             {% if video != None %}
-                <a href="/video/{{ video['Path'] }}"></a>
-                    <div class="video-card">
-                        <img  src="/image/{{ video['ImagePath'] }}" width="230" height="150" alt="Thumbnail" href="/video/{{ video['Path'] }}">
-                        <h3>{{ video['Name'] }}</h3>
-                    </div>
-                </a>
+            <a href="/video/{{ video['Path'] }}" class="video-link">
+                <div class="video-card">
+                    <img src="/image/{{ video['ImagePath'] }}" width="230" height="150" alt="Thumbnail">
+                    <h3>{{ video['Name'] }}</h3>
+                </div>
+            </a>
             {% endif %}
             {% endfor %}
         </div>

@@ -59,8 +59,6 @@ async def VideoPage(request, filename):
     # Отправляем HTML-страницу как ответ
     return response.html(html_content)
 
-@app.route()
-
 @app.route('/newdescription', methods=["POST"])
 async def changedescription(request):
     newdes = request.form.get('description')
@@ -125,9 +123,8 @@ async def index(request):
     resp_data = template.render(data=data)
     resp = response.html(resp_data)
     
-    if auth_cookie and auth_cookie != 'None':
+    if auth_cookie and auth_cookie != 'None' and not Database.get_user_id(auth_cookie):
         resp.cookies['Auth'] = None
-        
     return resp
 
 @app.route('/login', methods=["GET"])
@@ -152,7 +149,7 @@ async def loginPOST(request):
             cookiestring = generate_random_string(10)
         Database.create_session(cookiestring, request.form.get('login'))
         response = redirect('/')
-        response.cookies['Auth'] = cookiestring
+        response.cookies.add_cookie('Auth',cookiestring)
         return response
     else:
         template = env.get_template('login.html')
@@ -215,15 +212,13 @@ async def upload_video(request):
 @app.route('/reg', methods=['POST'])
 async def reg(request):
     cookiestring = generate_random_string(10)
-    while(Database.CookieExists(cookiestring)):
+    while(not Database.CookieExists(cookiestring)):
         cookiestring = generate_random_string(10)
-        while not Database.CookieExists(cookiestring):
-             cookiestring = generate_random_string(10)
-        Database.reg_user(cookiestring, request.form.get('username'), request.form.get('password'), request.form.get('nickname'))
-        response = redirect('/')
-        response.cookies['Auth'] = cookiestring
-        
-        return response
+    Database.reg_user(cookiestring, request.form.get('username'), request.form.get('password'), request.form.get('nickname'))
+    response = redirect('/')
+    response.cookies.add_cookie('Auth',cookiestring)
+    
+    return response
 
 @app.route('/register')
 async def register(request):
@@ -235,30 +230,8 @@ async def register(request):
         html_content = file.read()
         response = html(html_content)
         return response
-    
-@app.route('/log', methods=['POST'])
-async def log(request):
-        cookiestring = generate_random_string(10)
-        while not Database.CookieExists(cookiestring):
-             cookiestring = generate_random_string(10)
-        Login = request.form.get('username')
-        if Database.LoginUser(Login,request.form.get('password')) != None:
-             Database.create_session(cookiestring, Login)
-        response = redirect('/')
-        response.cookies['Auth'] = cookiestring
-        return response
 
-@app.route('/login')
-async def login(request):
-    cookies = str(request.cookies.get('Auth'))
-    if cookies != 'None':
-            response = redirect('/')
-            return response
-    with open('templates/login.html', 'r', encoding="UTF-8") as file:
-        html_content = file.read()
-        response = html(html_content)
-    # Отправляем HTML-страницу как ответ
-    return response 
+
 @app.route("/check")
 async def check(request):
     return response.text(request.cookies.get('Auth'))
