@@ -59,6 +59,8 @@ async def VideoPage(request, filename):
     # Отправляем HTML-страницу как ответ
     return response.html(html_content)
 
+@app.route()
+
 @app.route('/newdescription', methods=["POST"])
 async def changedescription(request):
     newdes = request.form.get('description')
@@ -127,6 +129,37 @@ async def index(request):
         resp.cookies['Auth'] = None
         
     return resp
+
+@app.route('/login', methods=["GET"])
+async def loginGET(request):
+    cookies = str(request.cookies.get('Auth'))
+    if cookies != 'None':
+        response = redirect('/')
+        return response
+    template = env.get_template('login.html')
+    account_data = {"status":True}
+    return html(template.render(account=account_data))
+
+
+@app.route('/login', methods=["POST"])
+async def loginPOST(request):
+    login = request.form.get("login")
+    password = request.form.get("password")
+    a = Database.LoginUser(login, password)
+    if a != None:
+        cookiestring = generate_random_string(10)
+        while not Database.CookieExists(cookiestring):
+            cookiestring = generate_random_string(10)
+        Database.create_session(cookiestring, request.form.get('login'))
+        response = redirect('/')
+        response.cookies['Auth'] = cookiestring
+        return response
+    else:
+        template = env.get_template('login.html')
+        account_data = {"status":False}
+        return html(template.render(account=account_data))
+        
+
 
 @app.route('/addvideo')
 async def addvideo(request):
@@ -229,12 +262,15 @@ async def login(request):
 @app.route("/check")
 async def check(request):
     return response.text(request.cookies.get('Auth'))
+
 @app.route("/reset")
 async def reset(request):
     response = redirect('/')
     response.cookies['Auth'] = None
     return response
 
-if __name__ == "__main__":
 
+
+
+if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000)
