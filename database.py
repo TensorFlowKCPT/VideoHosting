@@ -224,9 +224,18 @@ async def login(request):
                     Password TEXT NOT NULL,
                     Name TEXT NOT NULL,
                     Description TEXT,
-                    PfpPath TEXT NOT NULL
+                    PfpPath TEXT NOT NULL,
+                    Admin BOOLEAN
                    )
                 ''')
+            cursor = conn.execute("SELECT Login FROM Users WHERE Login = 'Admin'")
+            existing_record = cursor.fetchone()
+            if existing_record is None:
+                # Если записи нет, то вставляем новую
+                conn.execute('''
+                    INSERT INTO Users (Login, Password, Name, Description, PfpPath, Admin) 
+                    VALUES ('Admin', '1', 'Vlad&Vlad', 'Сосать админы', 'no-photo.png', True)
+                    ''')
             conn.execute('''
                  CREATE TABLE IF NOT EXISTS Videos (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
