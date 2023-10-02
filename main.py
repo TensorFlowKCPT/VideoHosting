@@ -18,6 +18,13 @@ def generate_random_string(length):
     return password
 
 
+def generate_password(seed, login):
+    random.seed(seed+login)
+    length = 50
+    characters = string.ascii_letters + string.digits
+    password = ''.join(random.choice(characters) for _ in range(length))
+    return password
+    
 app = Sanic("MyHelloWorldApp")
 app.static("/static", "./static")
 
@@ -150,7 +157,7 @@ async def loginGET(request):
 @app.route('/login', methods=["POST"])
 async def loginPOST(request):
     login = request.form.get("login")
-    password = request.form.get("password")
+    password = generate_password(request.form.get("password"), login)
     a = Database.LoginUser(login, password)
     if a != None:
         cookiestring = generate_random_string(10)
@@ -243,8 +250,7 @@ async def reg(request):
     cookiestring = generate_random_string(10)
     while(not Database.CookieExists(cookiestring)):
         cookiestring = generate_random_string(10)
-    
-    Database.reg_user(cookiestring, request.form.get('username'), request.form.get('password'), request.form.get('nickname'))
+    Database.reg_user(cookiestring, request.form.get('username'), generate_password(request.form.get('password'), request.form.get('username')), request.form.get('nickname'))
     response = redirect('/')
     response.cookies.add_cookie('Auth',cookiestring)
     original_image = Image.open('Images/no-photo.png')
