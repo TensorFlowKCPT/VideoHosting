@@ -19,6 +19,9 @@ def generate_random_string(length):
 
 
 app = Sanic("MyHelloWorldApp")
+app.static("/static", "./static")
+
+
 
 # Настройка Jinja2 для Sanic
 env = Environment(
@@ -257,10 +260,8 @@ async def register(request):
     if cookies != 'None':
         response = redirect('/')
         return response
-    with open('templates/register.html', 'r', encoding="UTF-8") as file:
-        html_content = file.read()
-        response = html(html_content)
-        return response
+
+    return await file('templates/register.html')
 
 @app.route("/check")
 async def check(request):

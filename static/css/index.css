@@ -1,0 +1,75 @@
+       body {
+            margin: 0;
+        }
+        
+        header {
+            background-color: #4d996a;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+        }
+        
+        /* Стили для навигации */
+        nav ul {
+            list-style: none;
+            padding: 0;
+            display: flex;
+        }
+        
+        nav li {
+            margin-right: 20px;
+        }
+        
+        nav a {
+            text-decoration: none;
+            color: #fff;
+        }
+        
+        /* Стили для контейнера видео */
+        .video-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .video {
+            margin: 10px;
+            max-width: 400px;
+            background-color: #ade9c4;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .video p {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #333;
+        }
+        .recommendations {
+            display: flex;
+            flex-wrap: nowrap; /* Это обеспечивает одну линию без переноса */
+            overflow-x: auto; /* Добавляет горизонтальный скролл, если контент не помещается */
+        }
+        
+        .video-card {
+            margin-right: 20px; /* Добавьте некоторые отступы между карточками для лучшего визуального разделения */
+        }
+        
+        .video-link {
+            text-decoration: none; /* Убираем стандартное подчеркивание ссылок */
+        }
+        
+        /* Стили для подвала */
+        footer {
+            background-color: #4d996a;
+            color: #fff;
+            text-align: center;
+            padding: 10px 0;
+        }
+        #pfp {
+            border-radius: 50%;
+        }
