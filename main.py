@@ -1,99 +1,116 @@
-from sanic import Sanic, response, json, redirect, html, file
-import random
-import cv2
-import string
-import os
-from database import *
-from sanic import Sanic
-from sanic.response import text, html
-from jinja2 import Environment, FileSystemLoader, select_autoescape
-from sanic.request import Request
 from PIL import Image
+from sanic import Sanic, response, json, redirect, html, file
+from sanic.request import Request
+from sanic.response import text, html
+from sanic_session import Session
+import cv2
+import os
+import random
+
+from database import *
 
 
-
-def generate_random_string(length):
-    characters = string.ascii_letters + string.digits
-    password = ''.join(random.choice(characters) for i in range(length))
-    return password
-
-
-def generate_password(seed, login):
-    random.seed(seed+login)
-    length = 50
-    characters = string.ascii_letters + string.digits
-    password = ''.join(random.choice(characters) for _ in range(length))
-    return password
-    
-app = Sanic("MyHelloWorldApp")
+app = Sanic("VideoHosting")
 app.static("/static", "./static")
 
-
-
-# Настройка Jinja2 для Sanic
-env = Environment(
-    loader=FileSystemLoader('templates'),  # Папка с шаблонами
-    autoescape=select_autoescape(['html', 'xml'])
-)
+Session(app)
 
 @app.post('/react/video')
 async def react_on_video(request):
-    if Database.IsVideoReacted(Database.get_user_id(request.cookies.get('Auth')),request.json['VideoId']):
-        Database.UnreactVideo(Database.get_user_id(request.cookies.get('Auth')),request.json['VideoId'])
+    """
+    Функция для обработки реакций на видео. 
+    Проверяет, была ли уже добавлена оценка, если да, то удаляет оценку; 
+    в противном случае, оценивает видео на основе параметра 'IsLike'.
+    """
+    if Database.is_video_reacted(request.ctx.session.get('Auth'),request.json['VideoId']):
+        Database.unreact_video(request.ctx.session.get('Auth'),request.json['VideoId'])
         return json({'message': 'Реакция удалена'})
     else:
-        Database.ReactOnVideo(Database.get_user_id(request.cookies.get('Auth')),request.json['VideoId'], request.json['IsLike'])
+        Database.react_video(request.ctx.session.get('Auth'),request.json['VideoId'], request.json['IsLike'])
         return json({'message': 'Реакция сохранена'})
+
 @app.post('/comment/video')
 async def comment_video(request):
-    Database.CommentVideo(Database.get_user_id(request.cookies.get('Auth')), request.json['Text'], request.json['VideoId'])
+    """
+    Функция для обработки комментирования видео. 
+    Принимает аутентифицированную сессию пользователя, текст комментария и идентификатор видео в качестве входных параметров.
+    """
+    Database.comment_video(request.ctx.session.get('Auth'), request.json['Text'], request.json['VideoId'])
     return json({'message': 'Реакция сохранена'})
 
+@app.post('/react/comment')
+async def reactComment(request):
+    """
+    Функция для обработки реакций на комментарии. 
+    Принимает аутентифицированную сессию пользователя, идентификатор комментария и флаг "Like" в качестве входных параметров.
+    """
+    comment_id = request.json.get('CommentId')
+    isLike = request.json.get('IsLike')
+    Database.react_comment(request.ctx.session.get('Auth'), comment_id, isLike)
 
-@app.route('/video/<filename:str>')
-async def VideoPage(request, filename):
+@app.get('/video/<filename:str>')
+async def video(request, filename:str):
+    """
+    Обработчик запроса на получение видео.
+    
+    Принимает имя файла видео и возвращает данные о видео в виде JSON-объекта.
+    Если видео не найдено, возвращает сообщение об ошибке.
+    Добавляет информацию о просмотрах видео и реакциях на видео.
+    Возвращает список рекомендованных видео.
+    Возвращает список комментариев к видео.
+    """
     if os.path.exists('video/'+filename):
-        Data = Database.GetVideoByPath(filename)
-        Data['ViewCount'] = Database.GetVideoWatchesCount(Data['id'])
-        Data['Reactions'] = Database.GetVideoReactions(Data['id'])
+        Data = Database.get_video_by_path(filename)
+        Data['ViewCount'] = Database.get_video_watches(Data['id'])
+        Data['Reactions'] = Database.get_video_reactions(Data['id'])
         for i in Data['Reactions']:
             if Data['Reactions'][i] is None:
                 Data['Reactions'][i] = 0
-        Data['OwnerNickname'] = Database.GetUserData(Data['OwnerId'])['Name']
-        Database.AddVideoToWatchList(Database.get_user_id(request.cookies.get('Auth')),Data['id'])
-        #Пример рекомендаций
-        Data['recommended_videos'] = [
-            Database.GetRandomVideo(),
-            Database.GetRandomVideo(),
-            Database.GetRandomVideo()
-        ]
-        Data['comments'] = Database.GetAllVideoComments(Data['id'])
-        template = env.get_template('video.html')
-        # Отправляем HTML-страницу как ответ
-        return response.html(template.render(data = Data))
-    
-    with open('templates/NotFound.html', 'r', encoding="UTF-8") as file:
-        html_content = file.read()
-    # Отправляем HTML-страницу как ответ
-    return response.html(html_content)
+        Data['OwnerNickname'] = Database.get_user_data(Data['OwnerId'])['Name']
+        Database.add_video_watch(request.ctx.session.get('Auth'),Data['id'])
+        
+        Data['recommended_videos'] = []
+        for i in range(5):
+            Data['recommended_videos'].append(Database.get_random_video())
+            
+        Data['comments'] = Database.get_all_comments(Data['id'])
+        return response.json(Data)
+    return response.json({'message': 'Видео не найдено'})
 
-@app.route('/newdescription', methods=["POST"])
-async def changedescription(request):
+@app.post('/newdescription')
+async def update_description(request):
+    """
+    Обработчик запроса на изменение описания аккаунта.
+    
+    Принимает аутентифицированную сессию пользователя и новый текст описания аккаунта в качестве входных параметров.
+    Проверяет, что текст описания не является пустым, и обновляет описание аккаунта в базе данных.
+    Возвращает сообщение об успешном изменении описания.
+    """
     newdes = request.form.get('description')
-    Database.NewDescription(Database.get_user_id(request.cookies.get('Auth')), newdes)
-    template = env.get_template('MyAccount.html')
-    cookies = str(request.cookies.get('Auth'))
-    account_data = Database.GetUserData(Database.get_user_id(cookies))
-    return response.redirect("/profile/" +  Database.get_user_id(cookies))
+    if not newdes:
+        return response.json({'message': 'Описание не может быть пустым'}, status=400)
+    Database.update_description(request.ctx.session.get('Auth'), newdes)
+    return response.json({'message': 'Описание изменено'}, status=200)
 
 @app.route('/servevideo/<filename:str>')
-async def serve_video(request, filename):
-    video_data = Database.GetVideoByPath(filename)
+async def serve_video(request, filename:str):
+    """
+    Обработчик запроса на получение потока видео.
+    
+    Принимает имя файла видео и информацию о конкретном байте видео в headerах запроса.
+    
+    Возвращает видео-поток начиная от указанного байта.
+    """
+    video_data = Database.get_video_by_path(filename)
     video_path = 'video/' + video_data['Path']
+    
     # Открываем файл видео
-    with open(video_path, 'rb') as video_file:
-        video_data = video_file.read()
-
+    try:
+        with open(video_path, 'rb') as video_file:
+            video_data = video_file.read()
+    except:
+        return response.json({'message': 'Видео не найдено'}, status=404)
+    
     headers = {'Accept-Ranges': 'bytes'}
     content_range = request.headers.get('Range')
 
@@ -116,118 +133,82 @@ async def serve_video(request, filename):
 
 @app.route('/image/<filename:str>')
 async def serve_image(request, filename):
+    """
+    Обработчик запроса на получение изображения.
+    
+    Принимает имя файла изображения, которое будет возвращено клиенту.
+    
+    Возвращает изображение в виде потока байтов.
+    """
     return await response.file('Images/'+filename)
-     
-@app.route('/')
-async def index(request):
-    template = env.get_template('index.html')
-    data = {
-        'recommended_videos': [Database.GetRandomVideo() for _ in range(5)]
-    }
+
+@app.post('/login')
+async def login(request):
+    """
+    Обработчик запроса на вход в аккаунт.
     
-    auth_cookie = request.cookies.get('Auth')
-    if auth_cookie and auth_cookie != 'None':
-        user_id = Database.get_user_id(auth_cookie)
-        if user_id and user_id != 'None':
-            data['auth'] = user_id
-            user_data = Database.GetUserData(user_id)
-            if user_data:
-                data['picture'] = user_data["PfpPath"]
-    else:
-        data["auth"] = None
-        data['picture'] = None
-        
-    resp_data = template.render(data=data)
-    resp = response.html(resp_data)
+    Принимает имя пользователя и пароль в формате form-data.
     
-    if auth_cookie and auth_cookie != 'None' and not Database.get_user_id(auth_cookie):
-        resp.cookies['Auth'] = None
-    return resp
-
-@app.route('/login', methods=["GET"])
-async def loginGET(request):
-    cookies = str(request.cookies.get('Auth'))
-    if cookies != 'None':
-        response = redirect('/')
-        return response
-    template = env.get_template('login.html')
-    account_data = {"status":True}
-    return html(template.render(account=account_data))
-
-@app.route('/login', methods=["POST"])
-async def loginPOST(request):
-    login = request.form.get("login")
-    password = generate_password(request.form.get("password"), login)
-    a = Database.LoginUser(login, password)
-    if a != None:
-        cookiestring = generate_random_string(10)
-        while not Database.CookieExists(cookiestring):
-            cookiestring = generate_random_string(10)
-        Database.create_session(cookiestring, request.form.get('login'))
-        response = redirect('/')
-        response.cookies.add_cookie('Auth',cookiestring)
-        return response
+    Если вход в аккаунт успешен, возвращает json сообщение с http кодом 200.
+    В противном случае возвращает json сообщение с http кодом 400.
+    """
+    username = request.form.get('username')
+    password = request.form.get('password')
+    logged_in = Database.login_user(username, password)
+    if logged_in:
+        request.ctx.session['user_id'] = logged_in
+        return response.json({'message': 'Вы вошли в аккаунт'}, status=200)
     else:
-        template = env.get_template('login.html')
-        account_data = {"status":False}
-        return html(template.render(account=account_data))
-        
-@app.route('/admin', methods=["GET"])
-async def admin(request):
-    if request.cookies.get('Auth') == "None":
-        return redirect("/login")
-    else:
-        template = env.get_template('adminmain.html')
-        account_data = {"status":True}
-        return html(template.render(account=account_data))
-
-@app.route('/admin/users', methods=["GET"])
-async def users(request):
-    template = env.get_template('users.html')
-    account_data = {"status":True}
-    return html(template.render(account=account_data))
-
-
-@app.route('/admin/videos', methods=["GET"])
-async def videos(request):
-    template = env.get_template('videos.html')
-    account_data = {"status":True}
-    return html(template.render(account=account_data))
-
-@app.route('/addvideo')
-async def addvideo(request):
-    # Открываем файл с HTML-страницей и считываем его содержимое
-    with open('templates/addvideo.html', 'r', encoding="UTF-8") as file:
-        html_content = file.read()
-
-    # Отправляем HTML-страницу как ответ
-    return response.html(html_content)
+        return response.json({'message': 'Неверное имя пользователя или пароль'}, status=400)
 
 @app.route('/profile/<profilename:str>')
-async def account_info(request: Request, profilename):
-    # Здесь вы можете получить информацию об аккаунте и передать ее в шаблон Jinja2
-    template = env.get_template('MyAccount.html')
-    account_data = Database.GetUserData(profilename)
-    account_data['UserVideos'] = Database.GetAllVideosByOwnerId(profilename)
-    return response.html(template.render(account=account_data))
+async def account_info(request: Request, profilename:str):
+    """
+    Обработчик запроса на получение информации о профиле пользователя.
+    
+    Принимает имя пользователя в параметрах маршрута.
+    
+    Возвращает json-объект, содержащий информацию о профиле пользователя,
+    включая список видео, принадлежащих данному пользователю.
+    В случае, если пользователь не найден, возвращает сообщение об ошибке с http кодом 404.
+    """
+    account_data = Database.get_user_data(profilename)
+    if not account_data:
+        return response.json({'message': 'Пользователь не найден'}, status=404)
+    account_data['UserVideos'] = Database.get_all_videos_by_owner_id(profilename)
+    return response.json(account_data, status=200)
 
-@app.route('/videoupload', methods=['POST'])
+@app.post('/videoupload')
 async def upload_video(request):
+    """
+    Обработчик запроса на загрузку нового видео.
+    
+    Принимает видеофайл, изображение для видео, имя видео, и описание видео в формате form-data.
+    
+    Если пользователь авторизован и видео успешно загружено, возвращает json-объект, содержащий информацию о загруженном видео с http кодом 201.
+    В противном случае возвращает json-объект с сообщением об ошибке и http кодом 401.
+    """
+    if not request.ctx.session.get('Auth'):
+        return response.json({'message': 'Вы не авторизованы'}, status=401)
+    
     uploaded_videofile = request.files.get('video')
     uploaded_videoimage = request.files.get('image')
     uploaded_videoname = request.form.get('name')
     uploaded_videodesc = request.form.get('desc')
     
     if not uploaded_videofile:
-        return text('Файл не загружен')
+        return response.json({'message': 'Видеофайла не было прикреплено'}, status=400)
     
     # Сохраните видеофайл на сервере
-    random_name_video = generate_random_string(10)
+    random_name_video = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
+    
     video_file_path = os.path.join('video/', random_name_video + ".mp4")
     
     with open(video_file_path, 'wb') as file:
         file.write(uploaded_videofile.body)
-    if uploaded_videoimage.name == '':
+
+    #Если не было прикреплено изображение к видео то берем случайный кадр из видео
+    if not uploaded_videoimage:
         vidcap = cv2.VideoCapture(os.path.join('video/', random_name_video + ".mp4"))
         totalFrames = vidcap.get(cv2.CAP_PROP_FRAME_COUNT)
         randomFrameNumber=random.randint(0, totalFrames)
@@ -235,50 +216,36 @@ async def upload_video(request):
         success, image = vidcap.read()
         if success:
             cv2.imwrite(os.path.join('Images/', random_name_video + ".png"), image)
+
     else:
         # Сохраняем загруженное изображение для видео
         image_file_path = os.path.join('Images/', random_name_video + ".png")
         with open(image_file_path, 'wb') as file:
             file.write(uploaded_videoimage.body)
 
-    Database.AddVideo(uploaded_videoname, random_name_video, uploaded_videodesc, Database.get_user_id(request.cookies.get('Auth')))
+    Database.add_video(uploaded_videoname, random_name_video, uploaded_videodesc, request.ctx.session.get('Auth'))
     
-    return response.redirect('/profile/'+Database.get_user_id(request.cookies.get('Auth')))
+    return response.json({'message': 'Видеофайл успешно загружен'}, status=200)
 
-@app.route('/reg', methods=['POST'])
-async def reg(request):
-    cookiestring = generate_random_string(10)
-    while(not Database.CookieExists(cookiestring)):
-        cookiestring = generate_random_string(10)
-    Database.reg_user(cookiestring, request.form.get('username'), generate_password(request.form.get('password'), request.form.get('username')), request.form.get('nickname'))
-    response = redirect('/')
-    response.cookies.add_cookie('Auth',cookiestring)
+@app.post('/register')
+async def register(request):
+    """
+    Обработчик запроса на регистрацию нового пользователя.
+    
+    Принимает имя пользователя, пароль и никнейм пользователя в формате form-data.
+    Если пользователь успешно зарегистрирован, возвращает json-объект с сообщением об успехе с http кодом 200.
+    В противном случае возвращает json-объект с сообщением об ошибке и http кодом 400.
+    """
+    try:
+        Database.reg_user(request.form.get('username'), request.form.get('password'), request.form.get('nickname'))
+    except:
+        return response.json({'message': 'Пользователь с таким именем уже существует'}, status=400)
     original_image = Image.open('Images/no-photo.png')
     copy_image = original_image.copy()
     copy_image.save('Images/'+request.form.get('username')+'.png')
     original_image.close()
     copy_image.close()
-    return response
-
-@app.route('/register')
-async def register(request):
-    cookies = str(request.cookies.get('Auth'))
-    if cookies != 'None':
-        response = redirect('/')
-        return response
-
-    return await file('templates/register.html')
-
-@app.route("/check")
-async def check(request):
-    return response.text(request.cookies.get('Auth'))
-
-@app.route("/reset")
-async def reset(request):
-    response = redirect('/')
-    response.cookies['Auth'] = None
-    return response
-
+    return response.json({'message': 'Аккаунт успешно создан'}, status=200)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000)
+    app.run(host="0.0.0.0", port=8000, debug=True)

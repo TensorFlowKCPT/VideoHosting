@@ -1,23 +1,33 @@
 import sqlite3
 import random, string
 from sanic import Sanic
+import hashlib
 import datetime
-class Database:
-    #session_id = request.cookies.get('session_id')
-    #session_id = str(uuid.uuid4())
-    '''
-    @app.route('/login')
-async def login(request):
-    # В реальной ситуации аутентификация будет проводиться, и здесь
-    # вы будете иметь user_id после успешной аутентификации.
-    user_id = '123'  # Здесь вы должны использовать фактический user_id
 
-    session_id = create_session(user_id)
-    response = redirect('/')
-    response.cookies['session_id'] = session_id
-    return response
-    '''
-    def GetAllVideosByOwnerId(OwnerId):
+def hashPassword(password: str) -> str:
+    """
+    Хеширует пароль с использованием алгоритма sha256
+
+    Args:
+        password (str): пароль, который нужно хешировать
+
+    Returns:
+        str: хеш пароля, полученный с использованием sha256
+    """
+    return hashlib.sha256(password.encode()).hexdigest()
+
+class Database:
+    @staticmethod
+    def get_all_videos_by_owner_id(OwnerId: str) -> list[dict]:
+        """
+        Возвращает список всех видео, принадлежащих пользователю с указанным id
+
+        Args:
+            OwnerId (str): id владельца видео
+
+        Returns:
+            list[dict]: список видео, принадлежащих пользователю с указанным id
+        """
         videos = []
         with sqlite3.connect('database.db') as conn:
             cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime FROM Videos WHERE OwnerId = ?', (OwnerId,))
@@ -33,18 +43,40 @@ async def login(request):
                 }
                 videos.append(video)
         return videos
-    def GetVideoReactions(VideoId):
+    
+    @staticmethod
+    def get_video_reactions(VideoId: int) -> dict[str, int]:
+        """
+        Возвращает количество лайков и дизлайков для видео с указанным id
+
+        Args:
+            VideoId (int): id видео
+
+        Returns:
+            dict[str, int]: словарь, содержащий количество лайков и дизлайков для видео с указанным id
+        """
         with sqlite3.connect('database.db') as conn:
             cursor = conn.execute('''SELECT 
-                                  SUM(CASE WHEN IsLike = 1 THEN 1 ELSE 0 END) AS LikesCount,
-                                  SUM(CASE WHEN IsLike = 0 THEN 1 ELSE 0 END) AS DislikesCount
-                                  FROM VideoReactions 
-                                  WHERE VideoId = ?''', (VideoId,))
+                                SUM(CASE WHEN IsLike = 1 THEN 1 ELSE 0 END) AS LikesCount,
+                                SUM(CASE WHEN IsLike = 0 THEN 1 ELSE 0 END) AS DislikesCount
+                                FROM VideoReactions 
+                                WHERE VideoId = ?''', (VideoId,))
             row = cursor.fetchone()
             if row:
                 return {'Likes': row[0], 'Dislikes':row[1]}
             return None
-    def GetVideoById(id):
+    
+    @staticmethod
+    def get_video_by_id(id: int) -> dict[str, str | int | datetime.datetime] | None:
+        """
+        Возвращает видео с указанным id
+
+        Args:
+            id (int): id видео
+
+        Returns:
+            dict[str, str | int | datetime] | None: словарь, содержащий информацию о видео с указанным id
+        """
         with sqlite3.connect('database.db') as conn:
             cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime, id FROM Videos WHERE id = ?', (id,))
             row = cursor.fetchone()
@@ -52,20 +84,59 @@ async def login(request):
                 return {'Id': row[6], 'Name':row[0], 'Path':row[1], 'ImagePath':row[2],'Description':row[3],'OwnerId':row[4], 'DateTime':datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S")}
             return None
     
-    def UnreactVideo(UserId, VideoId):
+    @staticmethod
+    def unreact_video(UserId: str, VideoId: int):
+        """
+        Удаляет реакцию пользователя на видео с указанным id
+
+        Args:
+            UserId (str): id пользователя
+            VideoId (int): id видео
+        """
         with sqlite3.connect('database.db') as conn:
             conn.execute('DELETE FROM VideoReactions WHERE ReactorId = ? AND VideoId = ?', (UserId, VideoId,))
 
-    def IsVideoReacted(UserId, VideoId):
+    @staticmethod
+    def is_video_reacted(UserId: str, VideoId: int) -> bool:
+        """
+        Проверяет, реагировал ли пользователь на видео с указанным id
+
+        Args:
+            UserId (str): id пользователя
+            VideoId (int): id видео
+
+        Returns:
+            bool: True, если пользователь реагировал на видео, False в противном случае
+        """
         with sqlite3.connect('database.db') as conn:
             cursor = conn.execute('SELECT Count() FROM VideoReactions WHERE ReactorId = ? AND VideoId = ?', (UserId, VideoId,))
             row = cursor.fetchone()
             return int(row[0]) == 1
-    def ReactOnVideo(UserId, VideoId, IsLike):
+    
+    @staticmethod
+    def react_video(UserId: str, VideoId: int, IsLike: int):
+        """
+        Добавляет реакцию пользователя на видео с указанным id
+
+        Args:
+            UserId (str): id пользователя
+            VideoId (int): id видео
+            IsLike (int): 1, если пользователь лайкнул видео, 0, если пользователь дизлайкнул видео
+        """
         with sqlite3.connect('database.db') as conn:
             conn.execute('INSERT INTO VideoReactions (VideoId, ReactorId, IsLike) VALUES (?, ?, ?)', (VideoId, UserId, IsLike,))
 
-    def GetVideoByPath(Path):
+    @staticmethod
+    def get_video_by_path(Path: str) -> dict[str, str | int | datetime.datetime] | None:
+        """
+        Возвращает видео с указанным путем
+
+        Args:
+            Path (str): путь видео
+
+        Returns:
+            dict[str, str | int | datetime] | None: словарь, содержащий информацию о видео с указанным путем
+        """
         with sqlite3.connect('database.db') as conn:
             cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime, id FROM Videos WHERE Path = ?', (Path,))
             row = cursor.fetchone()
@@ -75,108 +146,185 @@ async def login(request):
                 return None
             except:
                 return None
-        
-    def GetRandomVideo():
+    
+    @staticmethod
+    def get_random_video() -> dict[str, str | int | datetime.datetime] | None:
+        """
+        Возвращает случайное видео
+
+        Returns:
+            dict[str, str | int | datetime] | None: словарь, содержащий информацию о случайном видео
+        """
         try:
             with sqlite3.connect('database.db') as conn:
-                cursor = conn.execute('SELECT COUNT() FROM Videos')
+                cursor = conn.execute('SELECT id FROM Videos ORDER BY RANDOM() LIMIT 1')
                 row = cursor.fetchone()
-                return Database.GetVideoById(random.randint(1,int(row[0])))
+                return Database.get_video_by_id(row[0])
         except ValueError:
             return None
-    def CookieExists(cookiestring):
-        if(Database.GetUserData(Database.get_user_id(cookiestring))!=None):
-            return False
-        else: return True
-    
-    def GetVideoWatchesCount(VideoId):
+
+    @staticmethod
+    def get_video_watches(VideoId: int) -> int:
+        """
+        Возвращает количество просмотров видео
+
+        Args:
+            VideoId (int): id видео
+
+        Returns:
+            int: количество просмотров видео
+        """
         with sqlite3.connect('database.db') as conn:
             cursor = conn.execute('SELECT COUNT() FROM VideoWatches Where VideoId = ?', (VideoId,))
             row = cursor.fetchone()
             return row[0]
 
-    def AddVideoToWatchList(UserId, VideoId):
-        with sqlite3.connect('database.db') as conn:
-            conn.execute('INSERT INTO VideoWatches (WatcherId, VideoId) VALUES (?, ?)', ( UserId, VideoId,))
+    @staticmethod
+    def add_video_watch(UserId: str, VideoId: int):
+        """
+        Добавляет просмотр видео
 
-    def UnreactComment(UserId, CommentId):
+        Args:
+            UserId (str): id пользователя
+            VideoId (int): id видео
+        """
         with sqlite3.connect('database.db') as conn:
-            conn.execute('DELETE FROM CommentReactions WHERE ReactorId = ? AND CommentId = ?', (UserId, CommentId,))
+            conn.execute('INSERT INTO VideoWatches (WatcherId, VideoId) VALUES (?, ?)', (UserId, VideoId))
 
-    
-    def ReactOnComment(UserId, CommentId, IsLike):
+    @staticmethod
+    def unreact_comment(UserId: str, CommentId: int):
+        """
+        Удаляет реакцию на комментарий
+
+        Args:
+            UserId (str): id пользователя
+            CommentId (int): id комментария
+        """
         with sqlite3.connect('database.db') as conn:
-            conn.execute('INSERT INTO CommentReactions (CommentId, ReactorId, IsLike) VALUES (?, ?, ?)', (CommentId, UserId, IsLike,))
+            conn.execute('DELETE FROM CommentReactions WHERE ReactorId = ? AND CommentId = ?', (UserId, CommentId))
 
+    @staticmethod
+    def react_comment(UserId: str, CommentId: int, IsLike: bool):
+        """
+        Добавляет реакцию на комментарий
 
-    def CommentReacted(UserId, CommentId):
+        Args:
+            UserId (str): id пользователя
+            CommentId (int): id комментария
+            IsLike (bool): true, если лайк, false, если дизлайк
+        """
         with sqlite3.connect('database.db') as conn:
-            cursor = conn.execute('SELECT COUNT(), IsLike FROM CommentReactions Where CommentatorId = ? And CommentId = ?', (UserId, CommentId,))
+            conn.execute('INSERT INTO CommentReactions (CommentId, ReactorId, IsLike) VALUES (?, ?, ?)', (CommentId, UserId, IsLike))
+
+    @staticmethod
+    def comment_reaction(UserId: str, CommentId: int):
+        """
+        Возвращает информацию о реакции на комментарий
+
+        Args:
+            UserId (str): id пользователя
+            CommentId (int): id комментария
+
+        Returns:
+            dict[str, bool]: словарь, содержащий информацию о реакции на комментарий
+        """
+        with sqlite3.connect('database.db') as conn:
+            cursor = conn.execute('SELECT COUNT(), IsLike FROM CommentReactions Where CommentatorId = ? And CommentId = ?', (UserId, CommentId))
             row = cursor.fetchone()
             return {'IsReacted': row[0], 'IsLike': row[1]}
 
-    def CommentVideo(UserId, Text, VideoId):
+    @staticmethod
+    def comment_video(UserId: str, Text: str, VideoId: int):
+        """
+        Добавляет комментарий к видео
+
+        Args:
+            UserId (str): id пользователя
+            Text (str): текст комментария
+            VideoId (int): id видео
+        """
         with sqlite3.connect('database.db') as conn:
             conn.execute('INSERT INTO Comments (CommentatorId, Text, VideoId, DateTime) VALUES (?, ?, ?, ?)', (UserId, Text, VideoId, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
-    def GetAllVideoComments(VideoId):
-        #try:
-            with sqlite3.connect('database.db') as conn:
-                cursor = conn.execute('''
-                    SELECT
-                        CommentatorId,
-                        VideoId,
-                        Text,
-                        DateTime
-                    FROM Comments 
-                    Where VideoId = ?  
-                ''', (VideoId,))
+    @staticmethod
+    def get_all_comments(VideoId: int):
+        """
+        Возвращает все комментарии к видео
 
-                rows = cursor.fetchall()
-                comments = []
+        Args:
+            VideoId (int): id видео
 
-                for row in rows:
-                    comment = {
-                        'Commentatorid': row[0],
-                        'Video': row[1],
-                        'Text': row[2],
-                        'DateTime': datetime.datetime.strptime(row[3], "%Y-%m-%d %H:%M:%S")
-                    }
-
-                    commentator_data = Database.GetUserData(comment['Commentatorid'])
-                    if commentator_data:
-                        comment['CommentatorNickname'] = commentator_data['Name']
-
-                    comments.append(comment)
-
-                return comments
-        #except Exception as e:
-        #    print(f"An error occurred: {e}")
-        #    return []
-
-
-    def LoginExists(Login):
+        Returns:
+            list[dict]: список словарей, содержащих информацию о комментариях
+        """
         with sqlite3.connect('database.db') as conn:
-            cursor = conn.execute('Select Login From Users Where Login = ?', (Login,)) 
-            row = cursor.fetchone()
-            if row:
-                return True
-            return False
+            cursor = conn.execute('''
+                SELECT
+                    CommentatorId,
+                    VideoId,
+                    Text,
+                    DateTime
+                FROM Comments 
+                Where VideoId = ?  
+            ''', (VideoId,))
+            rows = cursor.fetchall()
+            comments = []
+            for row in rows:
+                comment = {
+                    'Commentatorid': row[0],
+                    'Video': row[1],
+                    'Text': row[2],
+                    'DateTime': datetime.datetime.strptime(row[3], "%Y-%m-%d %H:%M:%S")
+                }
+                commentator_data = Database.get_user_data(comment['Commentatorid'])
+                if commentator_data:
+                    comment['CommentatorNickname'] = commentator_data['Name']
+                comments.append(comment)
+            return comments
 
-    def NewDescription(Login, NewDescription):
+    @staticmethod
+    def update_description(Login: str, NewDescription: str) -> None:
+        """
+        Обновляет описание пользователя в базе данных
+
+        Args:
+            Login (str): Логин пользователя.
+            NewDescription (str): Новое описание.
+
+        Returns:
+            None
+        """
         with sqlite3.connect('database.db') as conn:
             conn.execute("UPDATE Users SET Description = ? where Login = ? ", (NewDescription, Login, ))
 
-    def AddVideo(Name, Path, Description, OwnerLogin):
+    @staticmethod
+    def add_video(Name: str, Path: str, Description: str, OwnerLogin: str) -> None:
+        """
+        Добавляет видео в базу данных.
+
+        Args:
+            Name (str): Название видео.
+            Path (str): Путь к видео.
+            Description (str): Описание видео.
+            OwnerLogin (str): Логин владельца видео.
+
+        Returns:
+            None
+        """
         with sqlite3.connect('database.db') as conn:
             conn.execute('INSERT INTO Videos (Name, Path, ImagePath, Description, OwnerId, DateTime) VALUES (?, ?, ?, ?, ?, ?)', (Name, Path+'.mp4',Path+'.png', Description, OwnerLogin, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
-    def create_session(session_id, user_Login):
-        with sqlite3.connect('database.db') as conn:
-            conn.execute('INSERT INTO Sessions (session_id, User) VALUES (?, ?)', (session_id, user_Login)) 
-        return session_id
-    
-    def GetUserData(UserId : str):
+    @staticmethod
+    def get_user_data(UserId: str):
+        """
+        Получает информацию о пользователе из базы данных.
+
+        Args:
+            UserId (str): Логин пользователя.
+
+        Returns:
+            dict | None: Словарь с информацией о пользователе или None, если пользователь не найден.
+        """
         with sqlite3.connect('database.db') as conn:
             cursor = conn.execute('SELECT Login, Name, Description, PfpPath FROM Users WHERE Login = ?', (UserId,))
             row = cursor.fetchone()
@@ -184,62 +332,79 @@ async def login(request):
                 return {'Login':row[0], 'Name':row[1], 'Description':row[2], 'PfpPath':row[3]}
             return None
 
-    def get_user_id(session_id):
+    @staticmethod
+    def login_user(Login: str, Password: str):
+        """
+        Логин пользователя в базе данных.
+
+        Args:
+            Login (str): Логин пользователя.
+            Password (str): Пароль пользователя.
+
+        Returns:
+            str | None: Логин пользователя или None, если пользователь не найден.
+        """
         with sqlite3.connect('database.db') as conn:
-            cursor = conn.execute('SELECT User FROM Sessions WHERE session_id = ?', (session_id,))
+            cursor = conn.execute('SELECT Login FROM Users WHERE Login = ? and Password = ?', (Login, Password))
             row = cursor.fetchone()
             if row:
                 return row[0]
             return None
-    def LoginUser(Login,Password):
-        with sqlite3.connect('database.db') as conn:
-            cursor = conn.execute('SELECT * FROM Users WHERE Login = ? and Password = ?', (Login, Password))
-            row = cursor.fetchone()
-            if row:
-                return row[0]
-            return None
-    def reg_user(SessionId,Login,Password, Nickname):
+
+    @staticmethod
+    def reg_user(Login: str, Password: str, Nickname: str) -> None:
+        """
+        Регистрация ползователя
+
+        Args:
+            Login (str):  Логин пользователя.
+            Password (str): Пароль пользователя.
+            Nickname (str): Ник пользователя.
+
+        Returns:
+            None
+        """
         with sqlite3.connect('database.db') as conn:
             conn.execute('INSERT INTO Users (Login, Password, Name, PfpPath) VALUES (?, ?, ?, ?)', (Login, Password, Nickname, Login+'.png'))
-            
-        Database.create_session(SessionId,Login)
-    def get_video_comments(videoid):
+
+    @staticmethod
+    def get_video_comments(videoid: int):
+        """
+        Получает комментарии к видео
+
+        Args:
+            videoid (int): id видео.
+
+        Returns:
+            list | None: Список комментариев или None, если комментарии не найдены.
+        """
         with sqlite3.connect('database.db') as conn:
             cursor = conn.execute('SELECT * FROM Comments WHERE VideoId = ?', (videoid,))
             row = cursor.fetchall()
             if row:
                 return row
             return None
+    
     @staticmethod
-    def StartDatabase():
-        with sqlite3.connect('database.db') as conn:
-            conn.execute('''CREATE TABLE IF NOT EXISTS Sessions (
-                         session_id TEXT PRIMARY KEY, 
-                         User TEXT NOT NULL,
-                         FOREIGN KEY (User) REFERENCES Users (Login)
-                         )
-                         ''')
+    def start_db() -> None:
+        """
+        Создает таблицы в базе данных.
+
+        Returns:
+            None
+        """
         with sqlite3.connect('database.db') as conn:
             conn.execute('''
-                 CREATE TABLE IF NOT EXISTS Users (
+                CREATE TABLE IF NOT EXISTS Users (
                     Login TEXT NOT NULL PRIMARY KEY,
                     Password TEXT NOT NULL,
                     Name TEXT NOT NULL,
                     Description TEXT,
-                    PfpPath TEXT NOT NULL,
-                    Admin BOOLEAN
-                   )
+                    PfpPath TEXT NOT NULL
+                )
                 ''')
-            cursor = conn.execute("SELECT Login FROM Users WHERE Login = 'Admin'")
-            existing_record = cursor.fetchone()
-            if existing_record is None:
-                # Если записи нет, то вставляем новую
-                conn.execute('''
-                    INSERT INTO Users (Login, Password, Name, Description, PfpPath, Admin) 
-                    VALUES ('Admin', '1', 'Vlad&Vlad', 'Сосать админы', 'no-photo.png', True)
-                    ''')
             conn.execute('''
-                 CREATE TABLE IF NOT EXISTS Videos (
+                CREATE TABLE IF NOT EXISTS Videos (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     Name TEXT NOT NULL,
                     Path TEXT NOT NULL,
@@ -248,45 +413,45 @@ async def login(request):
                     OwnerId TEXT NOT NULL,
                     DateTime DATETIME NOT NULL,
                     FOREIGN KEY (OwnerId) REFERENCES Users (Login)
-                   )
+                )
                 ''')
             conn.execute('''
-                 CREATE TABLE IF NOT EXISTS VideoReactions (
+                CREATE TABLE IF NOT EXISTS VideoReactions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     VideoId INTEGER NOT NULL,
                     ReactorId TEXT NOT NULL,
                     IsLike INTEGER NOT NULL,
                     FOREIGN KEY (VideoId) REFERENCES Videos (id),
                     FOREIGN KEY (ReactorId) REFERENCES Users (Login)
-                   )
+                )
                 ''')
             conn.execute('''
-                 CREATE TABLE IF NOT EXISTS VideoWatches (
+                CREATE TABLE IF NOT EXISTS VideoWatches (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     WatcherId TEXT,
                     VideoId INTEGER NOT NULL,
                     FOREIGN KEY (WatcherId) REFERENCES Users (Login)
                     FOREIGN KEY (VideoId) REFERENCES Videos (id)
-                   )
+                )
                 ''')
             conn.execute('''
-                 CREATE TABLE IF NOT EXISTS Comments (
+                CREATE TABLE IF NOT EXISTS Comments (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     CommentatorId TEXT NOT NULL,
                     VideoId INTEGER NOT NULL,
                     Text TEXT NOT NULL,
                     DateTime DATETIME NOT NULL,
                     FOREIGN KEY (CommentatorId) REFERENCES Users (Login)
-                   )
+                )
                 ''')
             conn.execute('''
-                 CREATE TABLE IF NOT EXISTS CommentReactions (
+                CREATE TABLE IF NOT EXISTS CommentReactions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     CommentId INTEGER NOT NULL,
                     ReactorId TEXT NOT NULL,
                     IsLike INTEGER NOT NULL,
                     FOREIGN KEY (CommentId) REFERENCES Comments (id),
                     FOREIGN KEY (ReactorId) REFERENCES Users (Login)
-                   )
+                )
                 ''')
-Database.StartDatabase()
+Database.start_db()
