@@ -22,11 +22,14 @@ async def react_on_video(request):
     Проверяет, была ли уже добавлена оценка, если да, то удаляет оценку; 
     в противном случае, оценивает видео на основе параметра 'IsLike'.
     """
-    if Database.is_video_reacted(request.ctx.session.get('Auth'),request.json.get('VideoId')):
-        Database.unreact_video(request.ctx.session.get('Auth'),request.json('VideoId'))
+    user = request.ctx.session.get('Auth')
+    if not user:
+        return json({'message': 'Вы не авторизованы'}, status=400)
+    if Database.is_video_reacted(user,request.json.get('VideoId')):
+        Database.unreact_video(user,request.json('VideoId'))
         return json({'message': 'Реакция удалена'})
     else:
-        Database.react_video(request.ctx.session.get('Auth'),request.json.get('VideoId'), request.json.get('IsLike'))
+        Database.react_video(user,request.json.get('VideoId'), request.json.get('IsLike'))
         return json({'message': 'Реакция сохранена'})
 
 @app.post('/search')
