@@ -83,7 +83,7 @@ async def video(request, video_id:int):
         
         Data['recommended_videos'] = []
         for i in range(5):
-            Data['recommended_videos'].append(Database.get_reccomended_videos_by_user_id(request.ctx.session.get('Auth'))[i])
+            Data['recommended_videos'].append(Database.get_reccomended_videos_by_user_id(request.ctx.session.get('Auth'))[i], 5)
             
         Data['comments'] = Database.get_all_comments(Data['id'])
         return response.json(Data)
