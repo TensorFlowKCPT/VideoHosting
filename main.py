@@ -199,6 +199,7 @@ async def account_info(request: Request, profilename:str):
     if not account_data:
         return response.json({'message': 'Пользователь не найден'}, status=404)
     account_data['UserVideos'] = Database.get_all_videos_by_owner_id(profilename)
+    account_data['ItIsMyAccount'] = profilename == request.ctx.session.get('Auth')
     return response.json(account_data, status=200)
 
 @app.post('/videoupload')
