@@ -181,7 +181,7 @@ async def login(request):
     password = request.form.get('password')
     logged_in = Database.login_user(username, password)
     if logged_in:
-        request.ctx.session['user_id'] = logged_in
+        request.ctx.session['Auth'] = logged_in
         return response.json({'message': 'Вы вошли в аккаунт'}, status=200)
     else:
         return response.json({'message': 'Неверное имя пользователя или пароль'}, status=400)
