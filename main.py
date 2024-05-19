@@ -35,8 +35,9 @@ async def search(request):
     #return json(Database.search_in_database_fast(text))
     distance = request.json.get('distance')
     onlyname = request.json.get('onlyname')
+    data = Database.search_in_database_slow(text, int(distance) if distance else 20)
     if onlyname:
-        return [{'Name': video['Name']} for video in Database.search_in_database_slow(text, int(distance) if distance else 20)]
+        return [video['Name'] for video in data['videos']] + [channel['Name'] for channel in data['channels']]
     else:
         return json(Database.search_in_database_slow(text, int(distance) if distance else 20))
     
