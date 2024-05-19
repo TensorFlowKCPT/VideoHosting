@@ -302,6 +302,16 @@ async def upload_video(request):
     
     return response.json({'message': 'Видеофайл успешно загружен'}, status=200)
 
+@app.get('/whoami')
+async def whoami(request):
+    """
+    Обработчик запроса на получение информации о текущем пользователе.
+    """
+    user = request.ctx.session.get('Auth')
+    if not user:
+        return response.json({'message': 'Вы не авторизованы'}, status=401)
+    return response.json({'user': Database.get_user_data(user)})
+
 @app.post('/register')
 async def register(request):
     """
