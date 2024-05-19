@@ -104,12 +104,8 @@ class Database:
                         'Tags': json.loads(row[7]) if row[7] else []
                     }
                     videos.append(video)
-            
-                
-        videos = list(set(videos))
         while len(videos) < count:
             videos.append(Database.get_random_video())
-            videos = list(set(videos))
         try:
             return random.sample(videos, count)
         except ValueError:
