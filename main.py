@@ -26,7 +26,7 @@ async def react_on_video(request):
     if not user:
         return response.json({'message': 'Вы не авторизованы'}, status=400)
     if Database.is_video_reacted(user,request.json.get('VideoId')):
-        Database.unreact_video(user,request.json('VideoId'))
+        Database.unreact_video(user,request.json.get('VideoId'))
         return response.json({'message': 'Реакция удалена'})
     else:
         Database.react_video(user,request.json.get('VideoId'), request.json.get('IsLike'))
