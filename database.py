@@ -148,7 +148,7 @@ class Database:
             cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime, id, TagsJSON FROM Videos WHERE id = ?', (id,))
             row = cursor.fetchone()
             if row:
-                return {'id': row[6], 'Name':row[0], 'Path':row[1], 'ImagePath':row[2],'Description':row[3],'OwnerId':row[4], 'DateTime':datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S"), 'Tags': json.loads(row[7]) if row[7] else []}
+                return {'id': row[6], 'Name':row[0], 'Path':row[1], 'ImagePath':row[2],'Description':row[3],'OwnerId':row[4], 'DateTime':row[5], 'Tags': json.loads(row[7]) if row[7] else []}
             return None
     
     @staticmethod
