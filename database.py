@@ -351,21 +351,26 @@ class Database:
                 }
                 comments.append(comment)
             return comments
-
     @staticmethod
-    def update_description(Login: str, NewDescription: str) -> None:
+    def delete_video(UserId: str, VideoId: int) -> dict:
+        with sqlite3.connect('database.db') as conn:
+            conn.execute('DELETE FROM Videos WHERE OwnerId = ? AND id = ?', (UserId, VideoId,))
+        return {'success': True}
+    @staticmethod
+    def update_profile(Login: str, NewDescription: str, NewName: str) -> None:
         """
         Обновляет описание пользователя в базе данных
 
         Args:
             Login (str): Логин пользователя.
             NewDescription (str): Новое описание.
+            NewName (str): Новое имя.
 
         Returns:
             None
         """
         with sqlite3.connect('database.db') as conn:
-            conn.execute("UPDATE Users SET Description = ? where Login = ? ", (NewDescription, Login, ))
+            conn.execute("UPDATE Users SET Description = ?, Name = ? where Login = ? ", (NewDescription, NewName, Login))
 
     @staticmethod
     def add_video(Name: str, Path: str, Description: str, OwnerLogin: str, Tags: list) -> None:
@@ -382,7 +387,7 @@ class Database:
             None
         """
         with sqlite3.connect('database.db') as conn:
-            conn.execute('INSERT INTO Videos (Name, Path, ImagePath, Description, OwnerId, DateTime, TagsJSON) VALUES (?, ?, ?, ?, ?, ?, ?)', (Name, Path+'.mp4',Path+'.png', Description, OwnerLogin, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), json.dumps(Tags).replace("\\", '')))
+            conn.execute('INSERT INTO Videos (Name, Path, ImagePath, Description, OwnerId, DateTime, TagsJSON) VALUES (?, ?, ?, ?, ?, ?, ?)', (Name, Path+'.mp4',Path+'.png', Description, OwnerLogin, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), json.dumps(Tags).replace("\\", '') if type(Tags) == list else Tags.replace('\\', '')))
 
     @staticmethod
     def get_user_data(UserId: str):
@@ -421,6 +426,25 @@ class Database:
                 return row[0]
             return None
 
+    @staticmethod
+    def redact_video(VideoId: int, Name: str, Path: str, Description: str, Tags: list, OwnerLogin: str) -> None:
+        """
+        Обновляет информацию о видео в базе данных.
+
+        Args:
+            VideoId (int): id видео.
+            Name (str): Название видео.
+            Path (str): Путь к видео.   
+            Description (str): Описание видео.
+            Tags (list): Список тегов видео.
+
+        Returns:
+            bool: True, если обновление прошло успешно, False в противном случае.
+        """
+        with sqlite3.connect('database.db') as conn:
+            conn.execute('UPDATE Videos SET Name = ?, Description = ?, TagsJSON = ? WHERE VideoId = ? and OwnerId = ?', (Name, Path+'.mp4', Description, json.dumps(Tags).replace("\\", '') if type(Tags) == list else Tags.replace('\\', ''), VideoId, OwnerLogin))
+        return True
+    
     @staticmethod
     def reg_user(Login: str, Password: str, Nickname: str) -> None:
         """

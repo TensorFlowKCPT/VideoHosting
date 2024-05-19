@@ -87,7 +87,27 @@ async def video(request, video_id:int):
         return response.json(Data)
     return response.json({'message': 'Видео не найдено'})
 
-@app.post('/newdescription')
+@app.post('/delete_video')
+async def delete_video(request):
+    """
+    Обработчик запроса на удаление видео.
+    
+    Принимает аутентифицированную сессию пользователя и идентификатор видео в качестве входных параметров.
+    Удаляет видео из базы данных.
+    """
+    user = request.ctx.session.get('Auth')
+    if not user:
+        return response.json({'message': 'Вы не авторизованы'}, status=400)
+    video = Database.get_video_by_id(request.json.get('VideoId'))
+    if not video:
+        return response.json({'message': 'Видео не найдено'}, status=400)
+    if video['OwnerId'] != user:
+        return response.json({'message': 'Вы не можете удалить это видео'}, status=400)
+    
+    Database.delete_video(request.json.get('VideoId'))
+    return response.json({'message': 'Видео удалено'}, status=200)
+
+@app.post('/newprofileinfo')
 async def update_description(request):
     """
     Обработчик запроса на изменение описания аккаунта.
@@ -96,11 +116,15 @@ async def update_description(request):
     Проверяет, что текст описания не является пустым, и обновляет описание аккаунта в базе данных.
     Возвращает сообщение об успешном изменении описания.
     """
-    newdes = request.form.get('description')
-    if not newdes:
-        return response.json({'message': 'Описание не может быть пустым'}, status=400)
-    Database.update_description(request.ctx.session.get('Auth'), newdes)
-    return response.json({'message': 'Описание изменено'}, status=200)
+    newdes = request.form.get('newdescription')
+    newname = request.form.get('newname')
+    if not newname:
+        return response.json({'message': 'Новое имя не может быть пустым'}, status=400)
+    newpfp = request.file.get('newpfp')
+    if newpfp:
+        newpfp.save('Images/'+request.ctx.session.get('Auth')+'.png')
+    Database.update_profile(request.ctx.session.get('Auth'), newdes, newname)
+    return response.json({'message': 'Профиль изменен'}, status=200)
 
 @app.get('/get_recommended_videos')
 async def get_recommended_videos(request):
@@ -177,7 +201,6 @@ async def login(request):
     """
     username = request.form.get('username')
     password = request.form.get('password')
-    print(username, password)
     logged_in = Database.login_user(username, password)
     if logged_in:
         request.ctx.session['Auth'] = logged_in
@@ -202,6 +225,32 @@ async def account_info(request: Request, profilename:str):
     account_data['UserVideos'] = Database.get_all_videos_by_owner_id(profilename)
     account_data['ItIsMyAccount'] = profilename == request.ctx.session.get('Auth')
     return response.json(account_data, status=200)
+
+@app.post('/redact_video_image')
+async def redact_video_image(request):
+    """
+    Обработчик запроса на редактирование изображения для видео.
+    """
+    user = request.ctx.session.get('Auth')
+    if not user:
+        return response.json({'message': 'Вы не авторизованы'}, status=401)
+    video = Database.get_video_by_id(request.form.get('VideoId'))
+    if not video:
+        return response.json({'message': 'Видео не найдено'}, status=404)
+    if video['OwnerId'] != user:
+        return response.json({'message': 'Вы не можете редактировать это видео'}, status=403)
+    request.file.get('image').save('Images/'+video['ImagePath'])
+    return response.json({'message': 'ok'}, status=200)
+
+@app.post('/redact_video')
+async def redact_video(request):
+    """
+    Обработчик запроса на редактирование видео.
+    """
+    user = request.ctx.session.get('Auth')
+    if not user:
+        return response.json({'message': 'Вы не авторизованы'}, status=401)
+    return response.json({'status': Database.redact_video(request.json.get('Name'), request.json.get('Description'), request.json.get('Tags'), user)}, status=200)
 
 @app.post('/videoupload')
 async def upload_video(request):
