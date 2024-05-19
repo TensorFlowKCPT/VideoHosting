@@ -37,9 +37,9 @@ async def search(request):
     onlyname = request.json.get('onlyname')
     data = Database.search_in_database_slow(text, int(distance) if distance else 20)
     if onlyname:
-        return [video['Name'] for video in data['videos']] + [channel['Name'] for channel in data['channels']]
+        return response.json([video['Name'] for video in data['videos']] + [channel['Name'] for channel in data['channels']])
     else:
-        return json(Database.search_in_database_slow(text, int(distance) if distance else 20))
+        return response.json(Database.search_in_database_slow(text, int(distance) if distance else 20))
     
 @app.post('/comment/video')
 async def comment_video(request):
