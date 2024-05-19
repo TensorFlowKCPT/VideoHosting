@@ -3,6 +3,7 @@ import random, string
 from sanic import Sanic
 import hashlib
 import datetime
+import Levenshtein
 
 def hashPassword(password: str) -> str:
     """
@@ -384,6 +385,89 @@ class Database:
             if row:
                 return row
             return None
+    
+    @staticmethod
+    def search_in_database_slow(text:str) -> list:
+        """
+        Ищет видео и каналы в базе данных, медленнее, но применяет к результатам поиска дистанцию левенштейна.
+
+        Returns:
+            list[dict]: Список видео и каналов.
+        """
+        with sqlite3.connect('database.db') as conn:
+            cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime, id FROM Videos')
+            rows = cursor.fetchall()
+            videos = []
+            for row in rows:
+                video = {
+                    'Name': row[0],
+                    'Path': row[1],
+                    'ImagePath': row[2],
+                    'Description': row[3],
+                    'OwnerId': row[4],
+                    'DateTime': row[5],
+                    'id': row[6]
+                }
+                videos.append(video)
+            cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime, id FROM Channels')
+            rows = cursor.fetchall()
+            channels = []
+            for row in rows:
+                channel = {
+                    'Name': row[0],
+                    'Path': row[1],
+                    'ImagePath': row[2],
+                    'Description': row[3],
+                    'OwnerId': row[4],
+                    'DateTime': row[5],
+                    'id': row[6]
+                }
+                channels.append(channel)
+            filtered_videos = [video for video in videos if Levenshtein.distance(video['Name'], text) < 5]
+            filtered_channels = [channel for channel in channels if Levenshtein.distance(channel['Name'], text) < 5]
+            filtered_videos.sort(key=lambda video: Levenshtein.distance(video['Name'], text))
+            filtered_channels.sort(key=lambda channel: Levenshtein.distance(channel['Name'], text))
+            return {'videos': filtered_videos, 'channels': filtered_channels}
+    
+    @staticmethod
+    def search_in_database_fast(text:str) -> list:
+        """
+        Ищет видео и каналы в базе данных.
+
+        Returns:
+            list[dict]: Список видео и каналов.
+        """
+        with sqlite3.connect('database.db') as conn:
+            cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime, id FROM Videos WHERE Name LIKE ?', (f'%{text}%',))
+            rows = cursor.fetchall()
+            videos = []
+            for row in rows:
+                video = {
+                    'Name': row[0],
+                    'Path': row[1],
+                    'ImagePath': row[2],
+                    'Description': row[3],
+                    'OwnerId': row[4],
+                    'DateTime': row[5],
+                    'id': row[6]
+                }
+                videos.append(video)
+            cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime, id FROM Channels WHERE Name LIKE ?', (f'%{text}%',))
+            rows = cursor.fetchall()
+            channels = []
+            for row in rows:
+                channels.append({
+                    'Name': row[0],
+                    'Path': row[1],
+                    'ImagePath': row[2],
+                    'Description': row[3],
+                    'OwnerId': row[4],
+                    'DateTime': row[5],
+                    'id': row[6]
+                })
+            output = {'videos':videos, 'channels':channels}
+            return output
+                    
     
     @staticmethod
     def start_db() -> None:

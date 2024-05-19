@@ -29,13 +29,19 @@ async def react_on_video(request):
         Database.react_video(request.ctx.session.get('Auth'),request.json['VideoId'], request.json['IsLike'])
         return json({'message': 'Реакция сохранена'})
 
+@app.post('/search')
+async def search(request):
+    text = request.json.get('text')
+    #return json(Database.search_in_database_fast(text))
+    return json(Database.search_in_database_slow(text))
+    
 @app.post('/comment/video')
 async def comment_video(request):
     """
     Функция для обработки комментирования видео. 
     Принимает аутентифицированную сессию пользователя, текст комментария и идентификатор видео в качестве входных параметров.
     """
-    Database.comment_video(request.ctx.session.get('Auth'), request.json['Text'], request.json['VideoId'])
+    Database.comment_video(request.ctx.session.get('Auth'), request.json.get('Text'), request.json.get('VideoId'))
     return json({'message': 'Реакция сохранена'})
 
 @app.post('/react/comment')
