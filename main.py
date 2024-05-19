@@ -60,8 +60,8 @@ async def reactComment(request):
     isLike = request.json.get('IsLike')
     Database.react_comment(request.ctx.session.get('Auth'), comment_id, isLike)
 
-@app.get('/video/<filename:str>')
-async def video(request, filename:str):
+@app.get('/video/<video_id:int>')
+async def video(request, video_id:int):
     """
     Обработчик запроса на получение видео.
     
@@ -71,8 +71,8 @@ async def video(request, filename:str):
     Возвращает список рекомендованных видео.
     Возвращает список комментариев к видео.
     """
-    if os.path.exists('video/'+filename):
-        Data = Database.get_video_by_path(filename)
+    if os.path.exists('video/'+video_id):
+        Data = Database.get_video_by_id(video_id)
         Data['ViewCount'] = Database.get_video_watches(Data['id'])
         Data['Reactions'] = Database.get_video_reactions(Data['id'])
         for i in Data['Reactions']:
