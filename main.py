@@ -71,8 +71,8 @@ async def video(request, video_id:int):
     Возвращает список рекомендованных видео.
     Возвращает список комментариев к видео.
     """
-    if os.path.exists('video/'+video_id):
-        Data = Database.get_video_by_id(video_id)
+    Data = Database.get_video_by_id(video_id)
+    if os.path.exists('video/'+Data['Path']):
         Data['ViewCount'] = Database.get_video_watches(Data['id'])
         Data['Reactions'] = Database.get_video_reactions(Data['id'])
         for i in Data['Reactions']:
@@ -83,7 +83,7 @@ async def video(request, video_id:int):
         
         Data['recommended_videos'] = []
         for i in range(5):
-            Data['recommended_videos'].append(Database.get_random_video())
+            Data['recommended_videos'].append(Database.get_reccomended_videos_by_user_id(request.ctx.session.get('Auth'))[i])
             
         Data['comments'] = Database.get_all_comments(Data['id'])
         return response.json(Data)
