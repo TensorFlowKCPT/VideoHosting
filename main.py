@@ -24,13 +24,13 @@ async def react_on_video(request):
     """
     user = request.ctx.session.get('Auth')
     if not user:
-        return json({'message': 'Вы не авторизованы'}, status=400)
+        return response.json({'message': 'Вы не авторизованы'}, status=400)
     if Database.is_video_reacted(user,request.json.get('VideoId')):
         Database.unreact_video(user,request.json('VideoId'))
-        return json({'message': 'Реакция удалена'})
+        return response.json({'message': 'Реакция удалена'})
     else:
         Database.react_video(user,request.json.get('VideoId'), request.json.get('IsLike'))
-        return json({'message': 'Реакция сохранена'})
+        return response.json({'message': 'Реакция сохранена'})
 
 @app.post('/search')
 async def search(request):
@@ -51,7 +51,7 @@ async def comment_video(request):
     Принимает аутентифицированную сессию пользователя, текст комментария и идентификатор видео в качестве входных параметров.
     """
     Database.comment_video(request.ctx.session.get('Auth'), request.json.get('Text'), request.json.get('VideoId'))
-    return json({'message': 'Реакция сохранена'})
+    return response.json({'message': 'Реакция сохранена'})
 
 @app.post('/react/comment')
 async def reactComment(request):
