@@ -78,7 +78,6 @@ async def video(request, video_id:int):
         for i in Data['Reactions']:
             if Data['Reactions'][i] is None:
                 Data['Reactions'][i] = 0
-        Data['OwnerNickname'] = Database.get_user_data(Data['OwnerId'])['Name']
         Database.add_video_watch(request.ctx.session.get('Auth'),Data['id'])
         
         Data['recommended_videos'] = Database.get_reccomended_videos_by_user_id(request.ctx.session.get('Auth'), 5)
