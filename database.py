@@ -130,7 +130,7 @@ class Database:
                                 WHERE VideoId = ?''', (VideoId,))
             row = cursor.fetchone()
             if row:
-                return {'Likes': row[0], 'Dislikes':row[1]}
+                return {'Likes': row[0] if row[0] else 0, 'Dislikes':row[1] if row[1] else 0}
             return None
     
     @staticmethod
