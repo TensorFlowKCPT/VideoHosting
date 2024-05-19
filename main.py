@@ -177,6 +177,7 @@ async def login(request):
     """
     username = request.form.get('username')
     password = request.form.get('password')
+    print(username, password)
     logged_in = Database.login_user(username, password)
     if logged_in:
         request.ctx.session['Auth'] = logged_in
