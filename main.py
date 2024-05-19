@@ -261,6 +261,9 @@ async def register(request):
     Если пользователь успешно зарегистрирован, возвращает json-объект с сообщением об успехе с http кодом 200.
     В противном случае возвращает json-объект с сообщением об ошибке и http кодом 400.
     """
+    print(request.form.get('username'))
+    print(request.form.get('password'))
+    print(request.form.get('nickname'))
     try:
         Database.reg_user(request.form.get('username'), request.form.get('password'), request.form.get('nickname'))
     except:
