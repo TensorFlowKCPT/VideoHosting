@@ -273,7 +273,8 @@ async def upload_video(request):
     
     if not uploaded_videofile:
         return response.json({'message': 'Видеофайла не было прикреплено'}, status=400)
-    
+    if not uploaded_videoname:
+        return response.json({'message': 'Имя видео не может быть пустым'}, status=400)
     # Сохраните видеофайл на сервере
     random_name_video = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
     
