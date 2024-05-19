@@ -409,18 +409,15 @@ class Database:
                     'id': row[6]
                 }
                 videos.append(video)
-            cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime, id FROM Channels')
+            cursor = conn.execute('SELECT Login, Name, Description, PfpPath FROM Users')
             rows = cursor.fetchall()
             channels = []
             for row in rows:
                 channel = {
-                    'Name': row[0],
-                    'Path': row[1],
-                    'ImagePath': row[2],
-                    'Description': row[3],
-                    'OwnerId': row[4],
-                    'DateTime': row[5],
-                    'id': row[6]
+                    'Name': row[1],
+                    'Login': row[0],
+                    'Description': row[2],
+                    'PfpPath': row[3]
                 }
                 channels.append(channel)
             filtered_videos = [video for video in videos if Levenshtein.distance(video['Name'], text) < 5]
@@ -452,18 +449,15 @@ class Database:
                     'id': row[6]
                 }
                 videos.append(video)
-            cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime, id FROM Channels WHERE Name LIKE ?', (f'%{text}%',))
+            cursor = conn.execute('SELECT Login, Name, Description, PfpPath FROM Users WhERE Name LIKE ?', (f'%{text}%',))
             rows = cursor.fetchall()
             channels = []
             for row in rows:
                 channels.append({
-                    'Name': row[0],
-                    'Path': row[1],
-                    'ImagePath': row[2],
-                    'Description': row[3],
-                    'OwnerId': row[4],
-                    'DateTime': row[5],
-                    'id': row[6]
+                    'Name': row[1],
+                    'Login': row[0],
+                    'Description': row[2],
+                    'PfpPath': row[3]
                 })
             output = {'videos':videos, 'channels':channels}
             return output
