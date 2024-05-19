@@ -41,7 +41,7 @@ class Database:
                     'ImagePath': row[2],
                     'Description': row[3],
                     'Owner': Database.get_user_data(row[4]), 
-                    'DateTime':datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S"),
+                    'DateTime':row[5],
                     'id':row[6],
                     'Tags': json.loads(row[7]) if row[7] else []
                 }
@@ -99,7 +99,7 @@ class Database:
                         'ImagePath': row[2],
                         'Description': row[3],
                         'Owner':Database.get_user_data(row[4]), 
-                        'DateTime':datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S"),
+                        'DateTime':row[5],
                         'id':row[6],
                         'Tags': json.loads(row[7]) if row[7] else []
                     }
@@ -215,7 +215,7 @@ class Database:
             row = cursor.fetchone()
             try:
                 if row:
-                    return {'Name':row[0], 'Path':row[1], 'ImagePath':row[2],'Description':row[3],'Owner':Database.get_user_data(row[4]), 'DateTime':datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S"), 'id':row[6]}
+                    return {'Name':row[0], 'Path':row[1], 'ImagePath':row[2],'Description':row[3],'Owner':Database.get_user_data(row[4]), 'DateTime':row[5], 'id':row[6]}
                 return None
             except:
                 return None
@@ -347,7 +347,7 @@ class Database:
                     'Commentatorid': row[0],
                     'Video': row[1],
                     'Text': row[2],
-                    'DateTime': datetime.datetime.strptime(row[3], "%Y-%m-%d %H:%M:%S")
+                    'DateTime': row[3]
                 }
                 commentator_data = Database.get_user_data(comment['Commentatorid'])
                 if commentator_data:
