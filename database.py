@@ -505,8 +505,7 @@ class Database:
                     'Description': row[3],
                     'Owner': Database.get_user_data(row[4]),
                     'DateTime': row[5],
-                    'id': row[6],
-                    'Tags': json.loads(row[7]) if row[7] else None
+                    'id': row[6]
                 }
                 videos.append(video)
             cursor = conn.execute('SELECT Login, Name, Description, PfpPath FROM Users')
