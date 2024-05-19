@@ -373,7 +373,7 @@ class Database:
             None
         """
         with sqlite3.connect('database.db') as conn:
-            conn.execute('INSERT INTO Videos (Name, Path, ImagePath, Description, OwnerId, DateTime, TagsJSON) VALUES (?, ?, ?, ?, ?, ?)', (Name, Path+'.mp4',Path+'.png', Description, OwnerLogin, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), json.dumps(Tags)))
+            conn.execute('INSERT INTO Videos (Name, Path, ImagePath, Description, OwnerId, DateTime, TagsJSON) VALUES (?, ?, ?, ?, ?, ?, ?)', (Name, Path+'.mp4',Path+'.png', Description, OwnerLogin, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), json.dumps(Tags)))
 
     @staticmethod
     def get_user_data(UserId: str):
@@ -510,7 +510,7 @@ class Database:
                     'Tags': json.loads(row[7]) if row[7] else []
                 }
                 videos.append(video)
-            cursor = conn.execute('SELECT Login, Name, Description, PfpPath, TagsJSON FROM Users WhERE Name LIKE ?', (f'%{text}%',))
+            cursor = conn.execute('SELECT Login, Name, Description, PfpPath, TagsJSON FROM Users WHERE Name LIKE ?', (f'%{text}%',))
             rows = cursor.fetchall()
             channels = []
             for row in rows:
