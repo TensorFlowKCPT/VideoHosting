@@ -154,7 +154,10 @@ class Database:
                 views = Database.get_video_watches(row[6])
                 if not views:
                     views = 0
-                return {'id': row[6], 'Name':row[0], 'Path':row[1], 'ImagePath':row[2],'Description':row[3],'Owner':Database.get_user_data(row[4]), 'DateTime':row[5], 'Tags': json.loads(row[7]) if row[7] else [], 'Reactions':reactions, 'ViewCount':views}
+                try:
+                    return {'id': row[6], 'Name':row[0], 'Path':row[1], 'ImagePath':row[2],'Description':row[3],'Owner':Database.get_user_data(row[4]), 'DateTime':row[5], 'Tags': json.loads(row[7]) if row[7] else [], 'Reactions':reactions, 'ViewCount':views}
+                except json.JSONDecodeError:
+                    return {'id': row[6], 'Name':row[0], 'Path':row[1], 'ImagePath':row[2],'Description':row[3],'Owner':Database.get_user_data(row[4]), 'DateTime':row[5], 'Tags': [], 'Reactions':reactions, 'ViewCount':views}
             return None
     
     @staticmethod
