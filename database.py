@@ -40,7 +40,7 @@ class Database:
                     'Path': row[1],
                     'ImagePath': row[2],
                     'Description': row[3],
-                    'OwnerId':row[4], 
+                    'Owner': Database.get_user_data(row[4]), 
                     'DateTime':datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S"),
                     'id':row[6],
                     'Tags': json.loads(row[7]) if row[7] else []
@@ -98,7 +98,7 @@ class Database:
                         'Path': row[1],
                         'ImagePath': row[2],
                         'Description': row[3],
-                        'OwnerId':row[4], 
+                        'Owner':Database.get_user_data(row[4]), 
                         'DateTime':datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S"),
                         'id':row[6],
                         'Tags': json.loads(row[7]) if row[7] else []
@@ -148,7 +148,7 @@ class Database:
             cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime, id, TagsJSON FROM Videos WHERE id = ?', (id,))
             row = cursor.fetchone()
             if row:
-                return {'id': row[6], 'Name':row[0], 'Path':row[1], 'ImagePath':row[2],'Description':row[3],'OwnerId':row[4], 'DateTime':row[5], 'Tags': json.loads(row[7]) if row[7] else []}
+                return {'id': row[6], 'Name':row[0], 'Path':row[1], 'ImagePath':row[2],'Description':row[3],'Owner':Database.get_user_data(row[4]), 'DateTime':row[5], 'Tags': json.loads(row[7]) if row[7] else []}
             return None
     
     @staticmethod
@@ -209,7 +209,7 @@ class Database:
             row = cursor.fetchone()
             try:
                 if row:
-                    return {'Name':row[0], 'Path':row[1], 'ImagePath':row[2],'Description':row[3],'OwnerId':row[4], 'DateTime':datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S"), 'id':row[6]}
+                    return {'Name':row[0], 'Path':row[1], 'ImagePath':row[2],'Description':row[3],'Owner':Database.get_user_data(row[4]), 'DateTime':datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S"), 'id':row[6]}
                 return None
             except:
                 return None
@@ -446,9 +446,16 @@ class Database:
         """
         with sqlite3.connect('database.db') as conn:
             cursor = conn.execute('SELECT * FROM Comments WHERE VideoId = ?', (videoid,))
-            row = cursor.fetchall()
-            if row:
-                return row
+            rows = cursor.fetchall()
+            if rows:
+                for row in rows:
+                    return {
+                        'id': row[0],
+                        'CommentatorId': row[1],
+                        'VideoId': row[2],
+                        'Text': row[3],
+                        'DateTime': row[4]
+                    }
             return None
     
     @staticmethod
@@ -469,7 +476,7 @@ class Database:
                     'Path': row[1],
                     'ImagePath': row[2],
                     'Description': row[3],
-                    'OwnerId': row[4],
+                    'Owner': Database.get_user_data(row[4]),
                     'DateTime': row[5],
                     'id': row[6],
                     'Tags': json.loads(row[7]) if row[7] else []
@@ -510,7 +517,7 @@ class Database:
                     'Path': row[1],
                     'ImagePath': row[2],
                     'Description': row[3],
-                    'OwnerId': row[4],
+                    'Owner': Database.get_user_data(row[4]),
                     'DateTime': row[5],
                     'id': row[6],
                     'Tags': json.loads(row[7]) if row[7] else []

@@ -83,7 +83,7 @@ async def video(request, video_id:int):
         
         Data['recommended_videos'] = Database.get_reccomended_videos_by_user_id(request.ctx.session.get('Auth'), 5)
         Data['comments'] = Database.get_all_comments(Data['id'])
-        print(Data)
+        
         return response.json(Data)
     return response.json({'message': 'Видео не найдено'})
 
