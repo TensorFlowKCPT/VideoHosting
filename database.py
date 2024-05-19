@@ -4,6 +4,7 @@ from sanic import Sanic
 import hashlib
 import datetime
 import Levenshtein
+import json
 
 def hashPassword(password: str) -> str:
     """
@@ -31,7 +32,7 @@ class Database:
         """
         videos = []
         with sqlite3.connect('database.db') as conn:
-            cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime FROM Videos WHERE OwnerId = ?', (OwnerId,))
+            cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime,id, TagsJSON FROM Videos WHERE OwnerId = ?', (OwnerId,))
             rows = cursor.fetchall()
             for row in rows:
                 video = {
@@ -40,7 +41,9 @@ class Database:
                     'ImagePath': row[2],
                     'Description': row[3],
                     'OwnerId':row[4], 
-                    'DateTime':datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S")
+                    'DateTime':datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S"),
+                    'id':row[6],
+                    'Tags': json.loads(row[7]) if row[7] else []
                 }
                 videos.append(video)
         return videos
@@ -79,10 +82,10 @@ class Database:
             dict[str, str | int | datetime] | None: словарь, содержащий информацию о видео с указанным id
         """
         with sqlite3.connect('database.db') as conn:
-            cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime, id FROM Videos WHERE id = ?', (id,))
+            cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime, id, TagsJSON FROM Videos WHERE id = ?', (id,))
             row = cursor.fetchone()
             if row:
-                return {'Id': row[6], 'Name':row[0], 'Path':row[1], 'ImagePath':row[2],'Description':row[3],'OwnerId':row[4], 'DateTime':datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S")}
+                return {'id': row[6], 'Name':row[0], 'Path':row[1], 'ImagePath':row[2],'Description':row[3],'OwnerId':row[4], 'DateTime':datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S"), 'Tags': json.loads(row[7]) if row[7] else []}
             return None
     
     @staticmethod
@@ -299,7 +302,7 @@ class Database:
             conn.execute("UPDATE Users SET Description = ? where Login = ? ", (NewDescription, Login, ))
 
     @staticmethod
-    def add_video(Name: str, Path: str, Description: str, OwnerLogin: str) -> None:
+    def add_video(Name: str, Path: str, Description: str, OwnerLogin: str, Tags: list) -> None:
         """
         Добавляет видео в базу данных.
 
@@ -308,12 +311,12 @@ class Database:
             Path (str): Путь к видео.
             Description (str): Описание видео.
             OwnerLogin (str): Логин владельца видео.
-
+            Tags (list): Список тегов видео.
         Returns:
             None
         """
         with sqlite3.connect('database.db') as conn:
-            conn.execute('INSERT INTO Videos (Name, Path, ImagePath, Description, OwnerId, DateTime) VALUES (?, ?, ?, ?, ?, ?)', (Name, Path+'.mp4',Path+'.png', Description, OwnerLogin, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            conn.execute('INSERT INTO Videos (Name, Path, ImagePath, Description, OwnerId, DateTime, TagsJSON) VALUES (?, ?, ?, ?, ?, ?)', (Name, Path+'.mp4',Path+'.png', Description, OwnerLogin, datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), json.dumps(Tags)))
 
     @staticmethod
     def get_user_data(UserId: str):
@@ -356,7 +359,6 @@ class Database:
     def reg_user(Login: str, Password: str, Nickname: str) -> None:
         """
         Регистрация ползователя
-
         Args:
             Login (str):  Логин пользователя.
             Password (str): Пароль пользователя.
@@ -395,7 +397,7 @@ class Database:
             list[dict]: Список видео и каналов.
         """
         with sqlite3.connect('database.db') as conn:
-            cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime, id FROM Videos')
+            cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime, id, TagsJSON FROM Videos')
             rows = cursor.fetchall()
             videos = []
             for row in rows:
@@ -406,7 +408,8 @@ class Database:
                     'Description': row[3],
                     'OwnerId': row[4],
                     'DateTime': row[5],
-                    'id': row[6]
+                    'id': row[6],
+                    'Tags': json.loads(row[7]) if row[7] else []
                 }
                 videos.append(video)
             cursor = conn.execute('SELECT Login, Name, Description, PfpPath FROM Users')
@@ -435,7 +438,7 @@ class Database:
             list[dict]: Список видео и каналов.
         """
         with sqlite3.connect('database.db') as conn:
-            cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime, id FROM Videos WHERE Name LIKE ?', (f'%{text}%',))
+            cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime, id, TagsJSON FROM Videos WHERE Name LIKE ?', (f'%{text}%',))
             rows = cursor.fetchall()
             videos = []
             for row in rows:
@@ -446,10 +449,11 @@ class Database:
                     'Description': row[3],
                     'OwnerId': row[4],
                     'DateTime': row[5],
-                    'id': row[6]
+                    'id': row[6],
+                    'Tags': json.loads(row[7]) if row[7] else []
                 }
                 videos.append(video)
-            cursor = conn.execute('SELECT Login, Name, Description, PfpPath FROM Users WhERE Name LIKE ?', (f'%{text}%',))
+            cursor = conn.execute('SELECT Login, Name, Description, PfpPath, TagsJSON FROM Users WhERE Name LIKE ?', (f'%{text}%',))
             rows = cursor.fetchall()
             channels = []
             for row in rows:
@@ -461,7 +465,7 @@ class Database:
                 })
             output = {'videos':videos, 'channels':channels}
             return output
-                    
+    
     
     @staticmethod
     def start_db() -> None:
@@ -490,6 +494,7 @@ class Database:
                     Description TEXT NOT NULL,
                     OwnerId TEXT NOT NULL,
                     DateTime DATETIME NOT NULL,
+                    TagsJSON TEXT,
                     FOREIGN KEY (OwnerId) REFERENCES Users (Login)
                 )
                 ''')

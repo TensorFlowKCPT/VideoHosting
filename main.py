@@ -34,7 +34,11 @@ async def search(request):
     text = request.json.get('text')
     #return json(Database.search_in_database_fast(text))
     distance = request.json.get('distance')
-    return json(Database.search_in_database_slow(text, int(distance) if distance else 20))
+    onlyname = request.json.get('onlyname')
+    if onlyname:
+        return [{'Name': video['Name']} for video in Database.search_in_database_slow(text, int(distance) if distance else 20)]
+    else:
+        return json(Database.search_in_database_slow(text, int(distance) if distance else 20))
     
 @app.post('/comment/video')
 async def comment_video(request):
@@ -134,7 +138,7 @@ async def serve_video(request, filename:str):
         # Вырезаем запрошенный диапазон данных из файла
         video_chunk = video_data[start:end+1]
         return response.raw(video_chunk, headers=headers, status=206)
-
+    Database.add_video_watch(request.ctx.session.get('Auth'),Database.get_video_by_path(filename)['id'])
     # Если Range не указан, отправляем весь файл
     return await response.file_stream(video_path, headers=headers)
 
@@ -202,6 +206,7 @@ async def upload_video(request):
     uploaded_videoimage = request.files.get('image')
     uploaded_videoname = request.form.get('name')
     uploaded_videodesc = request.form.get('desc')
+    tags = str(request.form.get('tags'))
     
     if not uploaded_videofile:
         return response.json({'message': 'Видеофайла не было прикреплено'}, status=400)
@@ -230,7 +235,7 @@ async def upload_video(request):
         with open(image_file_path, 'wb') as file:
             file.write(uploaded_videoimage.body)
 
-    Database.add_video(uploaded_videoname, random_name_video, uploaded_videodesc, request.ctx.session.get('Auth'))
+    Database.add_video(uploaded_videoname, random_name_video, uploaded_videodesc, request.ctx.session.get('Auth'), tags)
     
     return response.json({'message': 'Видеофайл успешно загружен'}, status=200)
 
