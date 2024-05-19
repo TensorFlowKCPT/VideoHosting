@@ -387,7 +387,7 @@ class Database:
             return None
     
     @staticmethod
-    def search_in_database_slow(text:str) -> list:
+    def search_in_database_slow(text:str, distance: int = 20) -> list:
         """
         Ищет видео и каналы в базе данных, медленнее, но применяет к результатам поиска дистанцию левенштейна.
 
@@ -420,8 +420,8 @@ class Database:
                     'PfpPath': row[3]
                 }
                 channels.append(channel)
-            filtered_videos = [video for video in videos if Levenshtein.distance(video['Name'], text) < 5]
-            filtered_channels = [channel for channel in channels if Levenshtein.distance(channel['Name'], text) < 5]
+            filtered_videos = [video for video in videos if Levenshtein.distance(video['Name'], text) < distance]
+            filtered_channels = [channel for channel in channels if Levenshtein.distance(channel['Name'], text) < distance]
             filtered_videos.sort(key=lambda video: Levenshtein.distance(video['Name'], text))
             filtered_channels.sort(key=lambda channel: Levenshtein.distance(channel['Name'], text))
             return {'videos': filtered_videos, 'channels': filtered_channels}

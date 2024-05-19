@@ -33,7 +33,8 @@ async def react_on_video(request):
 async def search(request):
     text = request.json.get('text')
     #return json(Database.search_in_database_fast(text))
-    return json(Database.search_in_database_slow(text))
+    distance = request.json.get('distance')
+    return json(Database.search_in_database_slow(text, int(distance) if distance else None))
     
 @app.post('/comment/video')
 async def comment_video(request):
