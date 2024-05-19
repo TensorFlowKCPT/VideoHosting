@@ -102,8 +102,11 @@ class Database:
                         'Tags': json.loads(row[7]) if row[7] else []
                     }
                     videos.append(video)
-        videos = set(videos)
-        return random.sample(videos, count)
+        videos = list(set(videos))
+        try:
+            return random.sample(videos, count)
+        except ValueError:
+            return videos
 
     @staticmethod
     def get_video_reactions(VideoId: int) -> dict[str, int]:
