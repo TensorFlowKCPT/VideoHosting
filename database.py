@@ -90,6 +90,8 @@ class Database:
             for tag in tags:
                 cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime, id, TagsJSON FROM Videos WHERE TagsJSON LIKE ?', (f'%{tags}%',))
                 cursor = cursor.fetchall()
+                if not cursor:
+                    continue
                 for row in cursor:
                     video = {
                         'Name': row[0],
@@ -102,7 +104,12 @@ class Database:
                         'Tags': json.loads(row[7]) if row[7] else []
                     }
                     videos.append(video)
+            
+                
         videos = list(set(videos))
+        while len(videos) < count:
+            videos.append(Database.get_random_video())
+            videos = list(set(videos))
         try:
             return random.sample(videos, count)
         except ValueError:
