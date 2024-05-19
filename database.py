@@ -496,8 +496,8 @@ class Database:
                     'PfpPath': row[3]
                 }
                 channels.append(channel)
-            filtered_videos = [video for video in videos if Levenshtein.distance(video['Name'], text) < distance]
-            filtered_channels = [channel for channel in channels if Levenshtein.distance(channel['Name'], text) < distance]
+            filtered_videos = [video for video in videos if Levenshtein.distance(video['Name'], text) < distance or text in video['Description']]
+            filtered_channels = [channel for channel in channels if Levenshtein.distance(channel['Name'], text) < distance or text in channel['Description']]
             filtered_videos.sort(key=lambda video: Levenshtein.distance(video['Name'], text))
             filtered_channels.sort(key=lambda channel: Levenshtein.distance(channel['Name'], text))
             outputvideos = []
