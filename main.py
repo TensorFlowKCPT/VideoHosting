@@ -76,8 +76,6 @@ async def video(request, video_id:int):
     """
     Data = Database.get_video_by_id(video_id)
     if os.path.exists('video/'+Data['Path']):
-        Data['ViewCount'] = Database.get_video_watches(Data['id'])
-        Data['Reactions'] = Database.get_video_reactions(Data['id'])
         for i in Data['Reactions']:
             if Data['Reactions'][i] is None:
                 Data['Reactions'][i] = 0
