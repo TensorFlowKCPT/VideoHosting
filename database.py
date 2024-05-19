@@ -503,7 +503,10 @@ class Database:
             filtered_channels = [channel for channel in channels if Levenshtein.distance(channel['Name'], text) < distance]
             filtered_videos.sort(key=lambda video: Levenshtein.distance(video['Name'], text))
             filtered_channels.sort(key=lambda channel: Levenshtein.distance(channel['Name'], text))
-            return {'videos': filtered_videos, 'channels': filtered_channels}
+            outputvideos = []
+            for i in filtered_videos:
+                outputvideos.append(Database.get_video_by_id(i['id']))
+            return {'videos': outputvideos, 'channels': filtered_channels}
     
     @staticmethod
     def search_in_database_fast(text:str) -> list:
