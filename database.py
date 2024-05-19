@@ -102,7 +102,7 @@ class Database:
                         'Tags': json.loads(row[7]) if row[7] else []
                     }
                     videos.append(video)
-        videos = list(set([video for video in videos], key=lambda i: (i['Name'], i['Path'], i['ImagePath'], i['Description'], i['OwnerId'], i['DateTime'], i['id'], tuple(i['Tags']) if i['Tags'] else None)))
+        videos = set(videos)
         return random.sample(videos, count)
 
     @staticmethod
