@@ -48,6 +48,63 @@ class Database:
                 videos.append(video)
         return videos
     
+    def get_user_favorite_tags(user_id: str) -> list[str]:
+        """
+        Возвращает список любимых тегов для пользователя с указанным id
+
+        Args:
+            user_id (str): id пользователя
+
+        Returns:
+            list[dict]: список любимых тегов пользователя с числом просмотров
+        """
+        tags = {}
+        with sqlite3.connect('database.db') as conn:
+            cursor = conn.execute('SELECT VideoId FROM VideoWatches WHERE WatcherId = ?', (user_id,))
+            WatchedVideos = []
+            for row in cursor.fetchall():
+                video = Database.get_video_by_id(row[0])
+                if video:
+                    WatchedVideos.append(video)
+            for video in WatchedVideos:
+                for tag in video['Tags']:
+                    if tag in tags:
+                        tags[tag] += 1
+                    else:
+                        tags[tag] = 1
+            return tags
+    
+    def get_reccomended_videos_by_user_id(user_id: str, count: int) -> list[dict]:
+        """
+        Возвращает рекомендованные видео, принадлежащие пользователю с указанным id
+
+        Args:
+            user_id (str): id владельца видео
+
+        Returns:
+            list[dict]: список рекомендованных видео, принадлежащих пользователю с указанным id
+        """
+        tags = Database.get_user_favorite_tags(user_id)
+        videos = []
+        with sqlite3.connect('database.db') as conn:
+            for tag in tags:
+                cursor = conn.execute('SELECT Name, Path, ImagePath, Description, OwnerId, DateTime, id, TagsJSON FROM Videos WHERE TagsJSON LIKE ?', (f'%{tags}%',))
+                cursor = cursor.fetchall()
+                for row in cursor:
+                    video = {
+                        'Name': row[0],
+                        'Path': row[1],
+                        'ImagePath': row[2],
+                        'Description': row[3],
+                        'OwnerId':row[4], 
+                        'DateTime':datetime.datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S"),
+                        'id':row[6],
+                        'Tags': json.loads(row[7]) if row[7] else []
+                    }
+                    videos.append(video)
+        videos = list(dict.fromkeys([video for video in videos], key=lambda i: (i['Name'], i['Path'], i['ImagePath'], i['Description'], i['OwnerId'], i['DateTime'], i['id'], tuple(i['Tags']) if i['Tags'] else None)))
+        return random.sample(videos, count)
+
     @staticmethod
     def get_video_reactions(VideoId: int) -> dict[str, int]:
         """

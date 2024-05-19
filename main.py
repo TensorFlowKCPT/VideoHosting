@@ -32,7 +32,7 @@ async def react_on_video(request):
 @app.post('/search')
 async def search(request):
     text = request.json.get('text')
-    #return json(Database.search_in_database_fast(text))
+    #data = Database.search_in_database_fast(text)
     distance = request.json.get('distance')
     onlyname = request.json.get('onlyname')
     data = Database.search_in_database_slow(text, int(distance) if distance else 20)
@@ -103,6 +103,19 @@ async def update_description(request):
         return response.json({'message': 'Описание не может быть пустым'}, status=400)
     Database.update_description(request.ctx.session.get('Auth'), newdes)
     return response.json({'message': 'Описание изменено'}, status=200)
+
+@app.get('/get_recommended_videos')
+async def get_recommended_videos(request):
+    """
+    Обработчик запроса на получение рекомендованных видео.
+    
+    Возвращает список рекомендованных видео.
+    """
+    user = request.ctx.session.get('Auth')
+    count = request.args.get('count')
+    if user:
+        return response.json(Database.get_reccomended_videos_by_user_id(user, int(count) if count else 5))
+    return response.json([Database.get_random_video() for i in range(int(count) if count else 5)])
 
 @app.route('/servevideo/<filename:str>')
 async def serve_video(request, filename:str):
