@@ -344,14 +344,11 @@ class Database:
             comments = []
             for row in rows:
                 comment = {
-                    'Commentatorid': row[0],
+                    'Commentator': Database.get_user_data(row[0]),
                     'Video': row[1],
                     'Text': row[2],
                     'DateTime': row[3]
                 }
-                commentator_data = Database.get_user_data(comment['Commentatorid'])
-                if commentator_data:
-                    comment['CommentatorNickname'] = commentator_data['Name']
                 comments.append(comment)
             return comments
 
