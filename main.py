@@ -34,7 +34,7 @@ async def search(request):
     text = request.json.get('text')
     #return json(Database.search_in_database_fast(text))
     distance = request.json.get('distance')
-    return json(Database.search_in_database_slow(text, int(distance) if distance else None))
+    return json(Database.search_in_database_slow(text, int(distance) if distance else 20))
     
 @app.post('/comment/video')
 async def comment_video(request):
