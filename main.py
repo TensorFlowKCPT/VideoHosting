@@ -1,7 +1,6 @@
 from PIL import Image
-from sanic import Sanic, response, json, redirect, html, file
+from sanic import Sanic, response
 from sanic.request import Request
-from sanic.response import text, html
 from sanic_session import Session
 import cv2
 import os

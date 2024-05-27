@@ -1,6 +1,5 @@
 import sqlite3
-import random, string
-from sanic import Sanic
+import random
 import hashlib
 import datetime
 import Levenshtein
