@@ -1,4 +1,4 @@
-## Конечные точки
+# Конечные точки
 
 ### `videoupload`
 
@@ -102,3 +102,112 @@
 
 - Возвращает файл.
 
+# Руководство для системного администратора: Как клонировать репозиторий с Git и запустить Python проект на Linux сервере
+
+## Шаг 1: Установка Git
+
+1. Откройте терминал на вашем сервере.
+2. Установите Git, если он еще не установлен. Для этого выполните команду:
+    ```sh
+    sudo apt-get update
+    sudo apt-get install git
+    ```
+
+## Шаг 2: Клонирование репозитория
+
+1. В терминале выполните команду, заменив `<URL-репозитория>` на фактический URL:
+    ```sh
+    git clone https://github.com/TensorFlowKCPT/VideoHosting.git
+    ```
+2. Перейдите в каталог проекта:
+    ```sh
+    cd VideoHosting
+    ```
+
+## Шаг 3: Установка Python и виртуального окружения
+
+1. Убедитесь, что Python установлен. Обычно в современных версиях Linux Python уже установлен. Проверить это можно командой:
+    ```sh
+    python3 --version
+    ```
+2. Установите `pip` (если он еще не установлен):
+    ```sh
+    sudo apt-get install python3-pip
+    ```
+3. Установите модуль `venv` для создания виртуального окружения:
+    ```sh
+    sudo apt-get install python3-venv
+    ```
+
+## Шаг 4: Создание и активация виртуального окружения
+
+1. Создайте виртуальное окружение в каталоге проекта:
+    ```sh
+    python3 -m venv venv
+    ```
+2. Активируйте виртуальное окружение:
+    ```sh
+    source venv/bin/activate
+    ```
+
+## Шаг 5: Установка зависимостей проекта
+
+1. Убедитесь, что вы находитесь в корневом каталоге проекта и виртуальное окружение активировано.
+2. Установите все необходимые пакеты, указанные в файле `requirements.txt`:
+    ```sh
+    pip install -r requirements.txt
+    ```
+
+## Шаг 6: Запуск проекта
+
+1. Обычно проект запускается с помощью определенного скрипта. Найдите в документации вашего проекта команду для запуска.
+2. Например, если проект содержит файл `main.py`, выполните:
+    ```sh
+    python main.py
+    ```
+
+## Шаг 7: Дополнительные настройки (опционально)
+
+1. Настройте сервер для работы в фоне. Для этого можно использовать инструменты вроде `screen`, `tmux` или системные службы (`systemd`).
+
+Пример для `screen`:
+```sh
+screen -S VideoHosting
+python main.py
+```
+
+Для выхода из сессии screen без завершения работы скрипта, нажмите Ctrl+A, затем D.
+
+Для systemd создайте файл службы:
+
+```sh
+sudo nano /etc/systemd/system/video_hosting.service
+```
+
+Вставьте в него следующее содержимое, адаптировав пути к вашему проекту:
+
+```ini
+[Unit]
+Description=VideoHosting
+After=network.target
+
+[Service]
+User=your_user
+WorkingDirectory=/path/to/your/project
+ExecStart=/path/to/your/project/venv/bin/python /path/to/your/project/main.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Сохраните файл и выйдите из редактора.
+
+Активируйте и запустите службу:
+
+```sh
+sudo systemctl enable video_hosting.service
+sudo systemctl start video_hosting.service
+```
+
+Теперь ваш Python проект должен работать на вашем Linux сервере.
