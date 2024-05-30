@@ -2,6 +2,7 @@ from PIL import Image
 from sanic import Sanic, response
 from sanic.request import Request
 from sanic_session import Session
+import string
 import cv2
 import os
 import random
